@@ -27,31 +27,27 @@ scene.add( axesHelper );
 let plane = createGroundPlaneXZ(20, 20)
 scene.add(plane);
 
-// create cube 1
-let cubeGeometry1 = new THREE.BoxGeometry(4, 4, 4);
-let cube1 = new THREE.Mesh(cubeGeometry1, material);
-// position the cube
-cube1.position.set(0.0, 2.0, 0.0);
-// add the cube to the scene
-scene.add(cube1);
 
+let material2 = setDefaultMaterial('lightblue');
+let material3 = setDefaultMaterial('lightgreen');
 
-// create cube 2
-let cubeGeometry2 = new THREE.BoxGeometry(2, 2, 2);
-let cube2 = new THREE.Mesh(cubeGeometry2, material);
-// position the cube
-cube2.position.set(5.0, 1.0, 0.0);
-// add the cube to the scene
-scene.add(cube2);
+// create cube
+let cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+let cube = new THREE.Mesh(cubeGeometry, material3);
+cube.position.set(0.0, 2.0, 0.0);
+scene.add(cube);
 
+// create cilinder
+let cilinderGeometry = new THREE.CylinderGeometry(2, 2, 5, 22);
+let cilinder = new THREE.Mesh(cilinderGeometry, material);
+cilinder.position.set(5.0, 2.5, 0.0);
+scene.add(cilinder);
 
-// create cube 3
-let cubeGeometry3 = new THREE.BoxGeometry(1, 1, 1);
-let cube3 = new THREE.Mesh(cubeGeometry3, material);
-// position the cube
-cube3.position.set(0.0, 0.5, 6.0);
-// add the cube to the scene
-scene.add(cube3);
+// create sphere
+const sphereGeometry = new THREE.SphereGeometry( 2, 32, 16 );
+const sphere = new THREE.Mesh( sphereGeometry, material2 );
+sphere.position.set(-5.0, 1.9, 0.0);    
+scene.add( sphere );
 
 
 // Use this to show information onscreen
