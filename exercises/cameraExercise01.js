@@ -28,10 +28,14 @@ let camLook = new THREE.Vector3(0.0, 0.0, 0.0);
 var message = new SecondaryBox("");
 
 // Main camera
-camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
    camera.position.copy(camPos);
    camera.up.copy( camUp );
    camera.lookAt(camLook);
+
+let cameraHolder = new THREE.Object3D();
+cameraHolder.add(camera);
+scene.add(cameraHolder);
 
 render();
 
@@ -48,6 +52,21 @@ function keyboardUpdate() {
    keyboard.update();
    
    // DICA: Insira aqui seu código para mover a câmera
+   if(keyboard.pressed("up")) camPos.z -= 0.5;
+   if(keyboard.pressed("down")) camPos.z += 0.5;
+   if(keyboard.pressed("left")) camPos.x -= 0.5;
+   if(keyboard.pressed("right")) camPos.x += 0.5;
+
+   if(keyboard.pressed("Q")) camLook.y += 0.1;
+   if(keyboard.pressed("E")) camLook.y -= 0.1;
+
+   if(keyboard.pressed("W")) camLook.y += 0.1;
+   if(keyboard.pressed("S")) camLook.y -= 0.1;
+   if(keyboard.pressed("A")) camLook.x -= 0.1;
+   if(keyboard.pressed("D")) camLook.x += 0.1;
+
+   camera.position.copy(camPos);
+   camera.lookAt(camLook);
    
    updateCamera();
 }
