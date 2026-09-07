@@ -81,6 +81,9 @@ const boxGeom = new THREE.BoxGeometry(2, 2, 2);
 const boxMesh = new THREE.Mesh(boxGeom, material);
 boxMesh.position.set(0, 1, 0);
 scene.add(boxMesh);
+const boxBoundingBox = new THREE.Box3();
+const cameraBoundingBox = new THREE.Box3();
+let cameraWasColliding = false;
 
 render();
 
@@ -88,7 +91,19 @@ function render() {
   requestAnimationFrame(render);
 
   const delta = clock.getDelta();
-  updateMovement(fpsControls, delta);
+  const collisionOccurred = updateMovement(fpsControls, delta, scene.children);
+
+  boxBoundingBox.setFromObject(boxMesh);
+  cameraBoundingBox.setFromCenterAndSize(
+    camera.position,
+    new THREE.Vector3(1, 2, 1),
+  );
+
+  const cameraIsColliding = collisionOccurred || cameraBoundingBox.intersectsBox(boxBoundingBox);
+  if (cameraIsColliding && !cameraWasColliding) {
+    console.warn("Colisão detectada entre a câmera e um objeto.");
+  }
+  cameraWasColliding = cameraIsColliding;
 
   if (isOrbital) {
     orbitControls.update();

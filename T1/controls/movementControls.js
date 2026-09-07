@@ -24,7 +24,7 @@ export function setupMovementControls(shootCallback) {
   document.addEventListener('contextmenu', onContextMenu);
 }
 
-export function updateMovement(controls, delta) {
+export function updateMovement(controls, delta, collisionObjects = []) {
   keyboard.update();
 
   if (!controls.isLocked) return;
@@ -56,11 +56,42 @@ export function updateMovement(controls, delta) {
 
   direction.normalize(); 
 
+  const playerBounds = new THREE.Box3();
+  const playerSize = new THREE.Vector3(1, 2, 1);
+  const previousPosition = new THREE.Vector3();
+  let collisionOccurred = false;
+
+  const collidesWithObject = () => {
+    playerBounds.setFromCenterAndSize(controls.object.position, playerSize);
+    return collisionObjects.some((object) => {
+      if (!object.isMesh || !object.visible) return false;
+
+      const objectBounds = new THREE.Box3().setFromObject(object);
+      return playerBounds.intersectsBox(objectBounds);
+    });
+  };
+
+  const moveWithCollision = (move) => {
+    previousPosition.copy(controls.object.position);
+    move();
+
+    if (collidesWithObject()) {
+      collisionOccurred = true;
+      controls.object.position.copy(previousPosition);
+    }
+  };
+
   if (isForward || isBackward) {
-    controls.moveForward(direction.z * speed * delta);
+    moveWithCollision(() => {
+      controls.moveForward(direction.z * speed * delta);
+    });
   }
-  
+
   if (isLeft || isRight) {
-    controls.moveRight(direction.x * speed * delta);
+    moveWithCollision(() => {
+      controls.moveRight(direction.x * speed * delta);
+    });
   }
+
+  return collisionOccurred;
 }
