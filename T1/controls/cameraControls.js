@@ -7,10 +7,6 @@ export function setupFPSCamera(camera, domElement) {
 
   crosshair.style.display = 'none'; 
 
-  domElement.addEventListener('click', () => {
-    controls.lock();
-  });
-
   controls.addEventListener('lock', function () {
     crosshair.style.display = 'block'; 
   });
