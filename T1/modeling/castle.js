@@ -3,7 +3,7 @@ import { setDefaultMaterial } from "../libs/util/util.js";
 
 const portas = [];
 
-export function construirCastelo(scene) {
+export function buildCastle(scene) {
   const matPedra = setDefaultMaterial("rgb(180, 175, 160)");
   const matMadeira = setDefaultMaterial("rgb(70, 40, 20)");
   const matTelhado = setDefaultMaterial("rgb(110, 110, 105)");
@@ -184,8 +184,8 @@ function construirEscadasMuro(grupo, matPedra) {
   grupo.add(grupoEscada);
 }
 
-// Função para exportar a atualização das portas para o loop principal
-export function atualizarPortas(camera) {
+// Exportar a atualização das portas
+export function updateDoors(camera) {
   for (let i = 0; i < portas.length; i++) {
     portas[i].update(camera);
   }

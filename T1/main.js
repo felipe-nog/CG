@@ -7,65 +7,33 @@ import {
   onWindowResize,
   createGroundPlaneXZ,
 } from "./libs/util/util.js";
-import { setupFPSCamera } from "./controls/cameraControls.js";
+import { setupCameraSystem } from "./controls/cameraControls.js";
 import {
   setupMovementControls,
   updateMovement,
 } from "./controls/movementControls.js";
-import { OrbitControls } from "./build/jsm/controls/OrbitControls.js";
-import { construirCastelo, atualizarPortas } from "./modeling/castle.js";
+import { updateDoors, buildCastle } from "./modeling/castle.js";
 
-let scene, renderer, camera, material, light, fpsControls, orbitControls;
+let scene, renderer, camera, material, light, cameraSystem;
 
 scene = new THREE.Scene();
 renderer = initRenderer();
 material = setDefaultMaterial();
 light = initDefaultBasicLight(scene);
-
 camera = initCamera(new THREE.Vector3(0, 2, 10));
-fpsControls = setupFPSCamera(camera, renderer.domElement);
-orbitControls = new OrbitControls(camera, renderer.domElement);
+cameraSystem = setupCameraSystem(camera, renderer.domElement);
 
-orbitControls.enableRotate = false;
-orbitControls.enableZoom = false;
-orbitControls.enablePan = false;
-orbitControls.enabled = false;
-
+const { fpsControls, orbitControls } = cameraSystem;
 const clock = new THREE.Clock();
-const cameraSavedPosition = new THREE.Vector3();
-const cameraSavedQuaternion = new THREE.Quaternion();
-let isOrbital = false;
 
 renderer.domElement.addEventListener("click", () => {
-  if (!isOrbital) {
+  if (!cameraSystem.isOrbital()) {
     fpsControls.lock();
   }
 });
 
-window.addEventListener("keydown", (event) => {
-  if (event.key.toLowerCase() === "c") {
-    isOrbital = !isOrbital;
-
-    if (isOrbital) {
-      fpsControls.unlock();
-      cameraSavedPosition.copy(camera.position);
-      cameraSavedQuaternion.copy(camera.quaternion);
-
-      orbitControls.enabled = true;
-      camera.position.set(0, 40, 40);
-      orbitControls.target.set(0, 0, 0);
-      orbitControls.update();
-    } else {
-      orbitControls.enabled = false;
-      camera.position.copy(cameraSavedPosition);
-      camera.quaternion.copy(cameraSavedQuaternion);
-      fpsControls.lock();
-    }
-  }
-});
-
 setupMovementControls(() => {
-  if (fpsControls.isLocked && !isOrbital) {
+  if (fpsControls.isLocked && !cameraSystem.isOrbital()) {
     console.log("Tiro!");
   }
 });
@@ -79,31 +47,28 @@ window.addEventListener(
 let plano = createGroundPlaneXZ(200, 200, 10, 10, "rgb(60, 100, 120)");
 scene.add(plano);
 
-construirCastelo(scene);
+buildCastle(scene);
 
-const caixaContornoCamera = new THREE.Box3();
 let cameraEstavaColidindo = false;
 
 render();
 
 function render() {
   requestAnimationFrame(render);
+
   const delta = clock.getDelta();
   const ocorreuColisao = updateMovement(fpsControls, delta, scene.children);
-  
-  if (!isOrbital) {
-    const cameraEstaColidindo = ocorreuColisao;
-    if (cameraEstaColidindo && !cameraEstavaColidindo) {
-      console.warn("Colisão detectada entre a câmera e um objeto.");
-    }
-    cameraEstavaColidindo = cameraEstaColidindo;
+
+  if (ocorreuColisao && !cameraEstavaColidindo) {
+    console.warn("Colisão detectada entre a câmera e um objeto.");
   }
+  cameraEstavaColidindo = !!ocorreuColisao;
 
-  atualizarPortas(camera);
-
-  if (isOrbital) {
+  if (cameraSystem.isOrbital()) {
     orbitControls.update();
   }
+
+  updateDoors(camera);
 
   renderer.render(scene, camera);
 }
