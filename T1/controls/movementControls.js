@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import KeyboardState from '../../libs/util/KeyboardState.js';
+import KeyboardState from '../libs/util/KeyboardState.js';
 
 const keyboard = new KeyboardState();
 const speed = 6.0; 

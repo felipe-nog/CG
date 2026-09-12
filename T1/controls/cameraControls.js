@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PointerLockControls } from "../../build/jsm/controls/PointerLockControls.js";
-import { OrbitControls } from "../../build/jsm/controls/OrbitControls.js";
+import { PointerLockControls } from "../build/jsm/controls/PointerLockControls.js";
+import { OrbitControls } from "../build/jsm/controls/OrbitControls.js";
 import { createCrosshair } from "./crosshairControls.js";
 
 export function setupCameraSystem(camera, domElement) {
