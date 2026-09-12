@@ -14,13 +14,17 @@ export function buildCastle(scene) {
   grupoCastelo.scale.set(1.5, 1.5, 1.5); 
   scene.add(grupoCastelo);
   
-  const chaoTerra = new THREE.Mesh(new THREE.BoxGeometry(76, 0.1, 76), matTerra);
+  const chaoTerra = new THREE.Mesh(new THREE.BoxGeometry(76, 0.1, 80), matTerra);
   chaoTerra.position.set(0, 0.05, 0);
   grupoCastelo.add(chaoTerra);
   
-  const chaoGrama = new THREE.Mesh(new THREE.BoxGeometry(40, 0.15, 30), matGrama);
-  chaoGrama.position.set(0, 0.08, 0);
-  grupoCastelo.add(chaoGrama);
+  const chaoGramaEsq = new THREE.Mesh(new THREE.BoxGeometry(20, 0.15, 50), matGrama);
+  chaoGramaEsq.position.set(-15, 0.08, 0);
+  grupoCastelo.add(chaoGramaEsq);
+
+  const chaoGramaDir = new THREE.Mesh(new THREE.BoxGeometry(20, 0.15, 50), matGrama);
+  chaoGramaDir.position.set(15, 0.08, 0);
+  grupoCastelo.add(chaoGramaDir);
 
   // Muralhas Externas
   const geomMuroHoriz = new THREE.BoxGeometry(80, 20, 4);
@@ -73,9 +77,9 @@ export function buildCastle(scene) {
   });
 
   // Torres dos Cantos
-  const geomTorre = new THREE.CylinderGeometry(6, 6, 24, 32);
+  const geomTorre = new THREE.CylinderGeometry(6, 6, 30, 32);
   const posTorres = [
-    [-40, 12, -40], [40, 12, -40], [-40, 12, 40], [40, 12, 40]
+    [-40, 15, -40], [40, 15, -40], [-40, 15, 40], [40, 15, 40]
   ];
   posTorres.forEach(pos => {
     const torre = new THREE.Mesh(geomTorre, matPedra);
@@ -84,17 +88,17 @@ export function buildCastle(scene) {
   });
   
   // Guaritas 
-  const geomTorreCentro = new THREE.BoxGeometry(10, 22, 10);
+  const geomTorreCentro = new THREE.BoxGeometry(10, 28, 10);
   const torreCentroFundo = new THREE.Mesh(geomTorreCentro, matPedra);
-  torreCentroFundo.position.set(0, 11, -40);
+  torreCentroFundo.position.set(0, 14, -40);
   grupoCastelo.add(torreCentroFundo);
   
   const torrePortaoEsq = new THREE.Mesh(geomTorreCentro, matPedra);
-  torrePortaoEsq.position.set(-10, 11, 40);
+  torrePortaoEsq.position.set(-10, 14, 40);
   grupoCastelo.add(torrePortaoEsq);
   
   const torrePortaoDir = new THREE.Mesh(geomTorreCentro, matPedra);
-  torrePortaoDir.position.set(10, 11, 40);
+  torrePortaoDir.position.set(10, 14, 40);
   grupoCastelo.add(torrePortaoDir);
 
   // Edificações Internas
@@ -108,16 +112,16 @@ export function buildCastle(scene) {
 function construirPredioInterno(grupo, offsetX, offsetZ, matPedra, matMadeira, matTelhado, direcaoPorta) {
   const grupoPredio = new THREE.Group();
   
-  const fundo = new THREE.Mesh(new THREE.BoxGeometry(16, 12, 2), matPedra);
-  fundo.position.set(0, 6, -7);
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(16, 17, 2), matPedra);
+  fundo.position.set(0, 9, -7);
   grupoPredio.add(fundo);
   
-  const geomLado = new THREE.BoxGeometry(2, 12, 12);
+  const geomLado = new THREE.BoxGeometry(2, 17, 16);
   const esq = new THREE.Mesh(geomLado, matPedra);
-  esq.position.set(-7, 6, 0);
+  esq.position.set(-7, 9, 0);
   grupoPredio.add(esq);
   const dir = new THREE.Mesh(geomLado, matPedra);
-  dir.position.set(7, 6, 0);
+  dir.position.set(7, 9, 0);
   grupoPredio.add(dir);
   
   const geomFrente = new THREE.BoxGeometry(4.5, 12, 2);
@@ -127,30 +131,44 @@ function construirPredioInterno(grupo, offsetX, offsetZ, matPedra, matMadeira, m
   const frenteDir = new THREE.Mesh(geomFrente, matPedra);
   frenteDir.position.set(5.75, 6, 7);
   grupoPredio.add(frenteDir);
-
-  const telhadoPorta = new THREE.Mesh(new THREE.BoxGeometry(7, 4, 2), matTelhado);
-  telhadoPorta.position.set(0, 10, 7);
-  grupoPredio.add(telhadoPorta);
   
-  const telhado = new THREE.Mesh(new THREE.BoxGeometry(16, 1, 16), matTelhado);
+  const telhado = new THREE.Mesh(new THREE.BoxGeometry(12, 1, 16), matTelhado);
   telhado.position.set(0, 12.5, 0);
   grupoPredio.add(telhado);
   
-  for(let i=0; i<6; i++) {
-    const degrau = new THREE.Mesh(new THREE.BoxGeometry(4, (i+1)*2, 4), matPedra);
-    degrau.position.set(10, (i+1), -4 + (i*4));
+  // Escadas para o telhado
+  for(let i=0; i<21; i++) {
+    const alturaDegrau = (i+1) * 0.5; 
+    const profundidade = 0.8;
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(3.5, alturaDegrau, profundidade), matPedra);
+    degrau.position.set(9.75, alturaDegrau/2, -8 + (i*profundidade));
     grupoPredio.add(degrau);
   }
   
+  const posZ_Topo = 9.75; 
+  const patamar = new THREE.Mesh(new THREE.BoxGeometry(3.5, 10.5, 3.5), matPedra);
+  patamar.position.set(9.75, 10.5/2, posZ_Topo);
+  grupoPredio.add(patamar);
+
+  // Acesso lateral 
+  for(let j=1; j<=5; j++) { 
+    const altDegrau = 10.5 + (j * 0.4); 
+    const largX = 1.0;
+    const stepSide = new THREE.Mesh(new THREE.BoxGeometry(largX, altDegrau, 3.5), matPedra);
+    stepSide.position.set(9.75 - 1.75 - (j * largX) + 0.5, altDegrau/2, posZ_Topo);
+    grupoPredio.add(stepSide);
+  }
+  
   const dobradica = new THREE.Group();
-  dobradica.position.set(-3.5, 4, 7);
-  const geomPorta = new THREE.BoxGeometry(7, 8, 1);
+  dobradica.position.set(-3.5, 6, 7);
+  const geomPorta = new THREE.BoxGeometry(7, 12, 1);
   const porta = new THREE.Mesh(geomPorta, matMadeira);
   porta.position.set(3.5, 0, 0); 
   dobradica.add(porta);
   grupoPredio.add(dobradica);
   
   grupoPredio.position.set(offsetX, 0, offsetZ);
+  grupoPredio.scale.set(0.8, 0.8, 0.8);
   grupo.add(grupoPredio);
   
   const posMundoDobradica = new THREE.Vector3();
@@ -175,12 +193,22 @@ function construirPredioInterno(grupo, offsetX, offsetZ, matPedra, matMadeira, m
 
 function construirEscadasMuro(grupo, matPedra) {
   const grupoEscada = new THREE.Group();
-  for(let i=0; i<10; i++) {
-    const alturaDegrau = (i+1)*2; 
-    const degrau = new THREE.Mesh(new THREE.BoxGeometry(6, alturaDegrau, 6), matPedra);
-    degrau.position.set(-33, alturaDegrau/2, 20 - (i*6));
+  
+  const profundidade = 0.8;
+  for(let i=0; i<40; i++) {
+    const alturaDegrau = (i+1) * 0.5; 
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(6, alturaDegrau, profundidade), matPedra);
+    degrau.position.set(-33, alturaDegrau/2, 20 - (i * profundidade));
     grupoEscada.add(degrau);
   }
+  const profPonte = 26.4;
+  const posZ_Ponte = -11.6 - (profPonte / 2); 
+  const ponteAcesso = new THREE.BoxGeometry(6, 1, profPonte);
+  const ponte = new THREE.Mesh(ponteAcesso, matPedra);
+
+  ponte.position.set(-33, 19.5, posZ_Ponte); 
+  grupoEscada.add(ponte);
+  
   grupo.add(grupoEscada);
 }
 
