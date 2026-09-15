@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import KeyboardState from '../../libs/util/KeyboardState.js';
 
 const keyboard = new KeyboardState();
-const speed = 6.0; 
+const speed = 8.0; 
 let onShoot = null;
 
 const onMouseDown = (event) => {
