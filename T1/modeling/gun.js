@@ -6,7 +6,7 @@ const GUN_RADIUS_BOTTOM = 0.08;
 const GUN_HEIGHT = 0.8;
 const GUN_COLOR = "rgb(40, 40, 40)";
 
-const GUN_LOCAL_POSITION = new THREE.Vector3(0, -0.35, -0.7);
+const GUN_LOCAL_POSITION = new THREE.Vector3(0.35, -0.18, -0.7);
 
 export function createGun(camera) {
   const geometry = new THREE.CylinderGeometry(

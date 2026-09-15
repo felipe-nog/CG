@@ -13,7 +13,11 @@ import {
   updateMovement,
 } from "./controls/movementControls.js";
 import { buildCastle, updateDoors } from "./modeling/castle.js";
-import { setupShootingSystem } from "./controls/shootingControls.js";
+import {
+  mountShootingSystem,
+  setupShootingSystem,
+  unMountShootingSystem,
+} from "./controls/shootingControls.js";
 
 let scene, renderer, camera, material, light, cameraSystem;
 
@@ -72,6 +76,9 @@ function render() {
 
   if (cameraSystem.isOrbital()) {
     orbitControls.update();
+    unMountShootingSystem(scene, camera);
+  } else {
+    mountShootingSystem(scene, camera);
   }
 
   shootingSystem.update(delta, scene.children);

@@ -40,7 +40,7 @@ export function setupCameraSystem(camera, domElement) {
     crosshair.style.display = "none";
 
     orbitControls.target.set(0, 0, 0);
-    camera.position.set(0, 40, 40);
+    camera.position.set(110, 160, 120);
     orbitControls.enabled = true;
     orbitControls.update();
   }
