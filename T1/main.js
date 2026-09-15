@@ -21,7 +21,7 @@ scene = new THREE.Scene();
 renderer = initRenderer();
 material = setDefaultMaterial();
 light = initDefaultBasicLight(scene);
-camera = initCamera(new THREE.Vector3(0, 2, 10));
+camera = initCamera(new THREE.Vector3(0, 4, 10));
 cameraSystem = setupCameraSystem(camera, renderer.domElement);
 
 const { fpsControls, orbitControls } = cameraSystem;
