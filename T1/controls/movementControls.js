@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import KeyboardState from '../../libs/util/KeyboardState.js';
 
 const keyboard = new KeyboardState();
-const speed = 6.0; 
+const speed = 12.0;
 let onShoot = null;
 
 const onMouseDown = (event) => {
@@ -27,6 +27,8 @@ export function setupMovementControls(shootCallback) {
 export function updateMovement(controls, delta, collisionObjects = []) {
   keyboard.update();
 
+  console.log(collisionObjects);
+
   if (!controls.isLocked) return;
 
   const direction = new THREE.Vector3();
@@ -38,23 +40,23 @@ export function updateMovement(controls, delta, collisionObjects = []) {
 
   const movementAmount = 10;
 
-  if(isForward) {
+  if (isForward) {
     direction.z = movementAmount;
-  } else if(isBackward) {
+  } else if (isBackward) {
     direction.z = -movementAmount;
   } else {
     direction.z = 0;
   }
-  
-  if(isLeft) {
+
+  if (isLeft) {
     direction.x = -movementAmount;
-  } else if(isRight) {
+  } else if (isRight) {
     direction.x = movementAmount;
   } else {
     direction.x = 0;
   }
 
-  direction.normalize(); 
+  direction.normalize();
 
   const playerBounds = new THREE.Box3();
   const playerSize = new THREE.Vector3(1, 2, 1);
@@ -62,12 +64,27 @@ export function updateMovement(controls, delta, collisionObjects = []) {
   let collisionOccurred = false;
 
   const collidesWithObject = () => {
-    playerBounds.setFromCenterAndSize(controls.object.position, playerSize);
-    return collisionObjects.some((object) => {
-      if (!object.isMesh || !object.visible) return false;
+    playerBounds.setFromCenterAndSize(
+      controls.object.position,
+      playerSize,
+    );
 
-      const objectBounds = new THREE.Box3().setFromObject(object);
-      return playerBounds.intersectsBox(objectBounds);
+    return collisionObjects.some((object) => {
+      if (!object.visible) return false;
+
+      let collision = false;
+
+      object.traverse((child) => {
+        if (!child.isMesh || !child.visible) return;
+
+        const objectBounds = new THREE.Box3().setFromObject(child);
+
+        if (playerBounds.intersectsBox(objectBounds)) {
+          collision = true;
+        }
+      });
+
+      return collision;
     });
   };
 
