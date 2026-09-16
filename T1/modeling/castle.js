@@ -27,8 +27,8 @@ export function buildCastle(scene) {
   grupoCastelo.add(chaoGramaDir);
 
   // Muralhas Externas
-  const geomMuroHoriz = new THREE.BoxGeometry(80, 20, 4);
-  const geomMuroVert = new THREE.BoxGeometry(4, 20, 76);
+  const geomMuroHoriz = new THREE.BoxGeometry(80, 20, 2);
+  const geomMuroVert = new THREE.BoxGeometry(2, 20, 76);
   
   const muroFundo = new THREE.Mesh(geomMuroHoriz, matPedra);
   muroFundo.position.set(0, 10, -40);
@@ -42,16 +42,31 @@ export function buildCastle(scene) {
   muroDir.position.set(38, 10, 0);
   grupoCastelo.add(muroDir);
   
-  const geomMuroFrenteEsq = new THREE.BoxGeometry(32, 20, 4);
+  const geomMuroFrenteEsq = new THREE.BoxGeometry(30, 20, 4);
   const muroFrenteEsq = new THREE.Mesh(geomMuroFrenteEsq, matPedra);
-  muroFrenteEsq.position.set(-24, 10, 40);
+  muroFrenteEsq.position.set(-30, 10, 40);
   grupoCastelo.add(muroFrenteEsq);
   
-  const geomMuroFrenteDir = new THREE.BoxGeometry(32, 20, 4);
+  const geomMuroFrenteDir = new THREE.BoxGeometry(30, 20, 4);
   const muroFrenteDir = new THREE.Mesh(geomMuroFrenteDir, matPedra);
-  muroFrenteDir.position.set(24, 10, 40);
+  muroFrenteDir.position.set(30, 10, 40);
   grupoCastelo.add(muroFrenteDir);
-  
+
+  const geomMuroComplementarDir = new THREE.BoxGeometry(6, 28, 6);
+  const muroFrenteComplementar = new THREE.Mesh(geomMuroComplementarDir, matPedra);
+  muroFrenteComplementar.position.set(15, 14, 40);
+  grupoCastelo.add(muroFrenteComplementar);
+
+  const geomMuroComplementarEsq = new THREE.BoxGeometry(6, 28, 6);
+  const muroFrenteComplementarEsq = new THREE.Mesh(geomMuroComplementarEsq, matPedra);
+  muroFrenteComplementarEsq.position.set(-15, 14, 40);
+  grupoCastelo.add(muroFrenteComplementarEsq);
+
+  const geomMuroSobrePorta = new THREE.BoxGeometry(16, 12, 11);
+  const muroSobrePorta = new THREE.Mesh(geomMuroSobrePorta, matPedra);
+  muroSobrePorta.position.set(0, 22, 38);
+  grupoCastelo.add(muroSobrePorta);
+
   // Portão Principal
   const geomPortaPrincipal = new THREE.BoxGeometry(16, 16, 2);
   const portaPrincipal = new THREE.Mesh(geomPortaPrincipal, matMadeira);
@@ -86,9 +101,9 @@ export function buildCastle(scene) {
     torre.position.set(pos[0], pos[1], pos[2]);
     grupoCastelo.add(torre);
   });
-  
-  // Guaritas 
-  const geomTorreCentro = new THREE.BoxGeometry(10, 28, 10);
+
+  // Guaritas
+  const geomTorreCentro = new THREE.BoxGeometry(10, 28, 12);
   const torreCentroFundo = new THREE.Mesh(geomTorreCentro, matPedra);
   torreCentroFundo.position.set(0, 14, -40);
   grupoCastelo.add(torreCentroFundo);
