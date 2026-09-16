@@ -12,7 +12,12 @@ import {
   setupMovementControls,
   updateMovement,
 } from "./controls/movementControls.js";
-import { updateDoors, buildCastle } from "./modeling/castle.js";
+import { buildCastle, updateDoors } from "./modeling/castle.js";
+import {
+  mountShootingSystem,
+  setupShootingSystem,
+  unMountShootingSystem,
+} from "./controls/shootingControls.js";
 
 let scene, renderer, camera, material, light, cameraSystem;
 
@@ -20,10 +25,15 @@ scene = new THREE.Scene();
 renderer = initRenderer();
 material = setDefaultMaterial();
 light = initDefaultBasicLight(scene);
-camera = initCamera(new THREE.Vector3(0, 2, 10));
+camera = initCamera(new THREE.Vector3(0, 4, 10));
 cameraSystem = setupCameraSystem(camera, renderer.domElement);
 
 const { fpsControls, orbitControls } = cameraSystem;
+
+scene.add(camera);
+
+const shootingSystem = setupShootingSystem(scene, camera);
+
 const clock = new THREE.Clock();
 
 renderer.domElement.addEventListener("click", () => {
@@ -34,7 +44,7 @@ renderer.domElement.addEventListener("click", () => {
 
 setupMovementControls(() => {
   if (fpsControls.isLocked && !cameraSystem.isOrbital()) {
-    console.log("Tiro!");
+    shootingSystem.shoot();
   }
 });
 
@@ -66,7 +76,12 @@ function render() {
 
   if (cameraSystem.isOrbital()) {
     orbitControls.update();
+    unMountShootingSystem(scene, camera);
+  } else {
+    mountShootingSystem(scene, camera);
   }
+
+  shootingSystem.update(delta, scene.children);
 
   updateDoors(camera);
 
