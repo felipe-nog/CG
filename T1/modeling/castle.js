@@ -163,7 +163,6 @@ export function buildCastle(scene) {
 
     grupoCastelo.add(grupoTorre);
   });
-  // ==========================================
 
   // Guaritas 
   const geomTorreCentro = new THREE.BoxGeometry(10, 28, 10);
