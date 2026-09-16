@@ -10,7 +10,7 @@ import {
 import { setupCameraSystem } from "./controls/cameraControls.js";
 import {
   setupMovementControls,
-  updateMovement
+  updateMovement,
 } from "./controls/movementControls.js";
 import { buildCastle, updateDoors } from "./modeling/castle.js";
 import {
@@ -59,14 +59,20 @@ scene.add(plano);
 
 buildCastle(scene);
 
+let cameraEstavaColidindo = false;
+
 render();
 
 function render() {
   requestAnimationFrame(render);
 
   const delta = clock.getDelta();
-  const colisionObjects = scene.children[4].children;
-  updateMovement(fpsControls, delta, colisionObjects);
+  const ocorreuColisao = updateMovement(fpsControls, delta, scene.children[4].children);
+
+  if (ocorreuColisao && !cameraEstavaColidindo) {
+    console.warn("Colisão detectada entre a câmera e um objeto.");
+  }
+  cameraEstavaColidindo = !!ocorreuColisao;
 
   if (cameraSystem.isOrbital()) {
     orbitControls.update();

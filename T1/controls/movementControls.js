@@ -1,13 +1,9 @@
 import * as THREE from 'three';
-import KeyboardState from '../../libs/util/KeyboardState.js';
+import KeyboardState from '../libs/util/KeyboardState.js';
 
 const keyboard = new KeyboardState();
-const speed = 12.0;
+const speed = 12.0; 
 let onShoot = null;
-
-const playerBounds = new THREE.Box3();
-const playerSize = new THREE.Vector3(1, 2, 1);
-const previousPosition = new THREE.Vector3();
 
 const onMouseDown = (event) => {
   // event.button === 0 (esquerdo), event.button === 2 (direito)
@@ -28,7 +24,7 @@ export function setupMovementControls(shootCallback) {
   document.addEventListener('contextmenu', onContextMenu);
 }
 
-export function updateMovement(controls, delta, colisionObjects) {
+export function updateMovement(controls, delta, collisionObjects = []) {
   keyboard.update();
 
   if (!controls.isLocked) return;
@@ -41,35 +37,49 @@ export function updateMovement(controls, delta, colisionObjects) {
   const isRight = keyboard.pressed("D") || keyboard.pressed("right");
 
   const movementAmount = 10;
-  let collisionOccurred = false;
 
-  const moveWithCollision = (move) => {
-    previousPosition.copy(controls.object.position);
-    move();
-
-    if (checkCollisions(controls, colisionObjects)) {
-      collisionOccurred = true;
-      controls.object.position.copy(previousPosition);
-    }
-  };
-
-  if (isForward) {
+  if(isForward) {
     direction.z = movementAmount;
-  } else if (isBackward) {
+  } else if(isBackward) {
     direction.z = -movementAmount;
   } else {
     direction.z = 0;
   }
-
-  if (isLeft) {
+  
+  if(isLeft) {
     direction.x = -movementAmount;
-  } else if (isRight) {
+  } else if(isRight) {
     direction.x = movementAmount;
   } else {
     direction.x = 0;
   }
 
-  direction.normalize();
+  direction.normalize(); 
+
+  const playerBounds = new THREE.Box3();
+  const playerSize = new THREE.Vector3(1, 2, 1);
+  const previousPosition = new THREE.Vector3();
+  let collisionOccurred = false;
+
+  const collidesWithObject = () => {
+    playerBounds.setFromCenterAndSize(controls.object.position, playerSize);
+    return collisionObjects.some((object) => {
+      if (!object.visible) return false;
+
+      const objectBounds = new THREE.Box3().setFromObject(object);
+      return playerBounds.intersectsBox(objectBounds);
+    });
+  };
+
+  const moveWithCollision = (move) => {
+    previousPosition.copy(controls.object.position);
+    move();
+
+    if (collidesWithObject()) {
+      collisionOccurred = true;
+      controls.object.position.copy(previousPosition);
+    }
+  };
 
   if (isForward || isBackward) {
     moveWithCollision(() => {
@@ -83,19 +93,5 @@ export function updateMovement(controls, delta, colisionObjects) {
     });
   }
 
-}
-
-function checkCollisions(controls, objects) {
-  playerBounds.setFromCenterAndSize(controls.object.position, playerSize);
-
-  const collisionObjects = objects.filter((object) => {
-    return object.visible;
-  });
-
-  collisionObjects.forEach((object) => {
-    let objectBounds = new THREE.Box3().setFromObject(object);
-    let collision = playerBounds.intersectsBox(objectBounds);
-    if (collision) return true;
-  });
-  return false;
+  return collisionOccurred;
 }
