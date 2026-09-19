@@ -3,7 +3,7 @@ import KeyboardState from "../libs/util/KeyboardState.js";
 import { collectCollisionData } from "../collisionUtils.js";
 
 const keyboard = new KeyboardState();
-const speed = 18.0;
+const speed = 12.0;
 const playerRadius = 0.5;
 const playerHeight = 2.0;
 const eyeHeight = 2.0;
@@ -49,8 +49,7 @@ export function updateMovement(controls, delta, collisionObjects = []) {
   );
   let collisionOccurred = false;
 
-  const { colliders, walkableBounds, roofBounds, stairBounds, ramps } =
-    collectCollisionData(collisionObjects);
+  const { colliders, walkableBounds, roofBounds, stairBounds, ramps } = collectCollisionData(collisionObjects);
 
   const floorAt = (position) => {
     const feet = position.y - eyeHeight;
@@ -95,8 +94,41 @@ export function updateMovement(controls, delta, collisionObjects = []) {
     return floor;
   };
 
-  // ATUALIZE A FUNÇÃO collidesAt (adicionamos isTraversable e isClimbing)
-  const collidesAt = (position, isTraversable, isClimbing) => {
+  const floorCrossedDuringFall = (position, previousFeet, nextFeet) => {
+    let landingFloor = -Infinity;
+    walkableBounds.forEach((bounds) => {
+      const inside = position.x >= bounds.min.x - playerRadius &&
+        position.x <= bounds.max.x + playerRadius &&
+        position.z >= bounds.min.z - playerRadius &&
+        position.z <= bounds.max.z + playerRadius;
+      const crossed = bounds.max.y <= previousFeet && bounds.max.y >= nextFeet;
+      if (inside && crossed && bounds.max.y > landingFloor) {
+        landingFloor = bounds.max.y;
+      }
+    });
+    return landingFloor;
+  };
+
+  const rampAt = (position) => ramps.find((ramp) => {
+    return position.x >= ramp.bounds.min.x - playerRadius &&
+      position.x <= ramp.bounds.max.x + playerRadius &&
+      position.z >= ramp.bounds.min.z - playerRadius &&
+      position.z <= ramp.bounds.max.z + playerRadius;
+  });
+
+  const isRampTraversal = (start, candidate) => {
+    const ramp = rampAt(candidate);
+    if (!ramp) return false;
+    const rampDirection = new THREE.Vector3(
+      ramp.top.x - ramp.bottom.x,
+      0,
+      ramp.top.z - ramp.bottom.z,
+    ).normalize();
+    return candidate.clone().sub(start).dot(rampDirection) > 0.01 ||
+      candidate.clone().sub(start).dot(rampDirection) < -0.01;
+  };
+
+  const collidesAt = (position, canClimb) => {
     playerBounds.setFromCenterAndSize(
       new THREE.Vector3(position.x, position.y - playerHeight / 2, position.z),
       playerSize,
@@ -113,14 +145,19 @@ export function updateMovement(controls, delta, collisionObjects = []) {
     const intersectsRoofFromBelow = roofBounds.some((bounds) => {
       return feet < bounds.max.y - 0.05 && playerBounds.intersectsBox(bounds);
     });
-    // Ignora colisão com teto apenas se estiver ativamente subindo um degrau
-    if (intersectsRoofFromBelow && !isClimbing) return true;
+    if (intersectsRoofFromBelow && !canClimb) return true;
 
-    // A escada só vira parede se o caminho NÃO for atravessável (ex: degrau alto demais)
-    return (
-      !isTraversable &&
-      stairBounds.some((bounds) => playerBounds.intersectsBox(bounds))
-    );
+    // Degraus: nunca liberamos a lista inteira por causa de canClimb — isso é
+    // o que permitia atravessar a escada pela lateral. Em vez disso, cada
+    // degrau só deixa de bloquear se o seu topo estiver dentro da "janela de
+    // escalada" (do pé até pé + maxStepHeight). Um degrau mais alto que essa
+    // janela continua bloqueando — seja ele um degrau ainda não alcançado à
+    // frente, seja a massa da escada abordada de lado/diagonal.
+    const climbWindowTop = feet + maxStepHeight;
+    return stairBounds.some((bounds) => {
+      if (bounds.max.y <= climbWindowTop + 0.001) return false;
+      return playerBounds.intersectsBox(bounds);
+    });
   };
 
   const localDirection = new THREE.Vector3(
@@ -141,7 +178,13 @@ export function updateMovement(controls, delta, collisionObjects = []) {
   forward.normalize();
   right.normalize();
 
-  if (localDirection.lengthSq() > 0) {
+  const supportFloor = floorAt(controls.object.position);
+  const supportFeet = controls.object.position.y - eyeHeight;
+  const isGrounded = supportFloor > -Infinity &&
+    Math.abs(supportFeet - supportFloor) <= 0.15 &&
+    verticalVelocity >= -0.5;
+
+  if (localDirection.lengthSq() > 0 && isGrounded) {
     const desiredMovement = new THREE.Vector3()
       .addScaledVector(forward, localDirection.z)
       .addScaledVector(right, localDirection.x)
@@ -149,24 +192,29 @@ export function updateMovement(controls, delta, collisionObjects = []) {
 
     const substeps = Math.max(1, Math.ceil(desiredMovement.length() / 0.2));
     const substepMovement = desiredMovement.clone().divideScalar(substeps);
-
-    // ATUALIZE O LOOP DE SUBSTEPS
     for (let step = 0; step < substeps; step += 1) {
       const start = controls.object.position.clone();
       const fullPosition = start.clone().add(substepMovement);
       const currentFloor = floorAt(start);
       const candidateFloor = floorAt(fullPosition);
 
-      // Separamos os conceitos:
-      // isTraversable: A diferença de altura permite passagem (seja subindo ou descendo)?
-      const isTraversable =
-        candidateFloor - (start.y - eyeHeight) <= maxStepHeight;
-      // needsClimb: O terreno da frente é mais alto E permite passagem?
-      const needsClimb = candidateFloor > currentFloor && isTraversable;
-
-      if (!collidesAt(fullPosition, isTraversable, needsClimb)) {
+      const leavesHighSurface = currentFloor > -Infinity &&
+        (candidateFloor === -Infinity ||
+          currentFloor - candidateFloor > maxStepHeight) &&
+        !rampAt(fullPosition);
+      if (leavesHighSurface) {
         controls.object.position.copy(fullPosition);
-        if (needsClimb) {
+        break;
+      }
+
+      const canClimb =
+        candidateFloor > currentFloor &&
+        candidateFloor - (start.y - eyeHeight) <= maxStepHeight;
+      const canTraverse = canClimb || isRampTraversal(start, fullPosition);
+
+      if (!collidesAt(fullPosition, canTraverse)) {
+        controls.object.position.copy(fullPosition);
+        if (canClimb || isRampTraversal(start, fullPosition)) {
           controls.object.position.y += Math.min(
             candidateFloor + 0.03 - (controls.object.position.y - eyeHeight),
             6 * delta,
@@ -177,25 +225,22 @@ export function updateMovement(controls, delta, collisionObjects = []) {
       }
 
       collisionOccurred = true;
-
-      // Checagem isolada para X
       const xPosition = start.clone();
       xPosition.x += substepMovement.x;
       const xFloor = floorAt(xPosition);
-      const xIsTraversable = xFloor - (start.y - eyeHeight) <= maxStepHeight;
-      const xNeedsClimb = xFloor > currentFloor && xIsTraversable;
-
-      if (!collidesAt(xPosition, xIsTraversable, xNeedsClimb))
+      const xCanClimb =
+        xFloor > currentFloor &&
+        xFloor - (start.y - eyeHeight) <= maxStepHeight;
+      if (!collidesAt(xPosition, xCanClimb || isRampTraversal(start, xPosition)))
         controls.object.position.x = xPosition.x;
 
-      // Checagem isolada para Z
       const zPosition = controls.object.position.clone();
       zPosition.z += substepMovement.z;
       const zFloor = floorAt(zPosition);
-      const zIsTraversable = zFloor - (start.y - eyeHeight) <= maxStepHeight;
-      const zNeedsClimb = zFloor > currentFloor && zIsTraversable;
-
-      if (!collidesAt(zPosition, zIsTraversable, zNeedsClimb))
+      const zCanClimb =
+        zFloor > currentFloor &&
+        zFloor - (start.y - eyeHeight) <= maxStepHeight;
+      if (!collidesAt(zPosition, zCanClimb || isRampTraversal(start, zPosition)))
         controls.object.position.z = zPosition.z;
     }
   }
@@ -205,19 +250,29 @@ export function updateMovement(controls, delta, collisionObjects = []) {
   const targetFeet = floor + 0.03;
   if (
     floor > -Infinity &&
-    targetFeet > feet &&
-    targetFeet - feet <= maxStepHeight
+    Math.abs(targetFeet - feet) <= maxStepHeight
   ) {
-    controls.object.position.y += Math.min(targetFeet - feet, 6 * delta);
+    controls.object.position.y += THREE.MathUtils.clamp(
+      targetFeet - feet,
+      -6 * delta,
+      6 * delta,
+    );
     verticalVelocity = 0;
   } else {
+    const previousFeet = feet;
     verticalVelocity = Math.max(
       verticalVelocity - gravity * delta,
       -maxFallSpeed,
     );
     controls.object.position.y += verticalVelocity * delta;
-    if (floor > -Infinity && controls.object.position.y - eyeHeight <= floor) {
-      controls.object.position.y = floor + eyeHeight;
+    const nextFeet = controls.object.position.y - eyeHeight;
+    const crossedFloor = floorCrossedDuringFall(
+      controls.object.position,
+      previousFeet,
+      nextFeet,
+    );
+    if (crossedFloor > -Infinity && nextFeet <= crossedFloor) {
+      controls.object.position.y = crossedFloor + eyeHeight;
       verticalVelocity = 0;
     }
   }
