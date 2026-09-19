@@ -3,7 +3,7 @@ import { setDefaultMaterial } from "../../libs/util/util.js";
 
 const PROJECTILE_RADIUS = 0.12;
 const PROJECTILE_COLOR = "rgb(255, 200, 0)";
-const PROJECTILE_SPEED = 60;
+const PROJECTILE_SPEED = 90;
 const PROJECTILE_MAX_DISTANCE = 100;
 const PROJECTILE_SIZE = new THREE.Vector3(
   PROJECTILE_RADIUS * 2,
