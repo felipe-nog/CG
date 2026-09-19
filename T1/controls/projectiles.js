@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { setDefaultMaterial } from "../../libs/util/util.js";
+import { getSolidBounds } from "../collisionUtils.js";
 
 const PROJECTILE_RADIUS = 0.12;
 const PROJECTILE_COLOR = "rgb(255, 200, 0)";
@@ -17,7 +18,6 @@ export function createProjectileSystem(scene) {
 
   const projectiles = [];
   const projectileBounds = new THREE.Box3();
-  const objectBounds = new THREE.Box3();
 
   function spawnProjectile(origin, direction) {
     const mesh = new THREE.Mesh(geometry, material);
@@ -27,9 +27,6 @@ export function createProjectileSystem(scene) {
     scene.add(mesh);
 
     const normalizedDirection = direction.clone().normalize();
-    // Ponto final do trajeto: o mais longe que o projétil pode chegar,
-    // na direção do disparo. O movimento é a interpolação (lerp) entre
-    // a origem e esse ponto, conforme o "progress" avança com o tempo.
     const target = origin
       .clone()
       .addScaledVector(normalizedDirection, PROJECTILE_MAX_DISTANCE);
@@ -42,17 +39,9 @@ export function createProjectileSystem(scene) {
     });
   }
 
-  function collidesWithEnvironment(mesh, collisionObjects) {
+  function collidesWithEnvironment(mesh, solidBounds) {
     projectileBounds.setFromCenterAndSize(mesh.position, PROJECTILE_SIZE);
-
-    return collisionObjects.some((object) => {
-      if (!object.isMesh || !object.visible || object.userData.isProjectile) {
-        return false;
-      }
-
-      objectBounds.setFromObject(object);
-      return projectileBounds.intersectsBox(objectBounds);
-    });
+    return solidBounds.some((bounds) => projectileBounds.intersectsBox(bounds));
   }
 
   function removeProjectile(index) {
@@ -61,6 +50,12 @@ export function createProjectileSystem(scene) {
   }
 
   function update(delta, collisionObjects = []) {
+    if (projectiles.length === 0) return;
+
+    // Calculado uma vez por frame (não por projétil) — a geometria estática
+    // não muda entre os disparos ativos.
+    const solidBounds = getSolidBounds(collisionObjects);
+
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const projectile = projectiles[i];
 
@@ -72,7 +67,7 @@ export function createProjectileSystem(scene) {
         projectile.progress,
       );
 
-      if (collidesWithEnvironment(projectile.mesh, collisionObjects)) {
+      if (collidesWithEnvironment(projectile.mesh, solidBounds)) {
         removeProjectile(i);
         continue;
       }

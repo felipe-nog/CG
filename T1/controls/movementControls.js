@@ -1,5 +1,6 @@
-import * as THREE from 'three';
-import KeyboardState from '../libs/util/KeyboardState.js';
+import * as THREE from "three";
+import KeyboardState from "../libs/util/KeyboardState.js";
+import { collectCollisionData } from "../collisionUtils.js";
 
 const keyboard = new KeyboardState();
 const speed = 18.0;
@@ -23,12 +24,11 @@ const onContextMenu = (event) => {
   event.preventDefault();
 };
 
-
 export function setupMovementControls(shootCallback) {
   onShoot = shootCallback;
 
-  document.addEventListener('mousedown', onMouseDown);
-  document.addEventListener('contextmenu', onContextMenu);
+  document.addEventListener("mousedown", onMouseDown);
+  document.addEventListener("contextmenu", onContextMenu);
 }
 
 export function updateMovement(controls, delta, collisionObjects = []) {
@@ -42,40 +42,21 @@ export function updateMovement(controls, delta, collisionObjects = []) {
   const isRight = keyboard.pressed("D") || keyboard.pressed("right");
 
   const playerBounds = new THREE.Box3();
-  const playerSize = new THREE.Vector3(playerRadius * 2, playerHeight, playerRadius * 2);
+  const playerSize = new THREE.Vector3(
+    playerRadius * 2,
+    playerHeight,
+    playerRadius * 2,
+  );
   let collisionOccurred = false;
 
-  const colliders = [];
-  const walkableBounds = [];
-  const roofBounds = [];
-  const stairBounds = [];
-  const ramps = [];
-  const collectColliders = (object) => {
-    if (!object.visible) return;
-    if (object.isMesh) {
-      const bounds = new THREE.Box3().setFromObject(object);
-      if (object.userData.collisionType === "ramp") {
-        ramps.push({
-          bounds,
-          bottom: object.parent.localToWorld(object.userData.ramp.bottom.clone()),
-          top: object.parent.localToWorld(object.userData.ramp.top.clone()),
-        });
-      } else if (object.userData.collisionType === "walkable") {
-        walkableBounds.push(bounds);
-        if (object.userData.isRoof) roofBounds.push(bounds);
-        if (object.userData.isStairStep) stairBounds.push(bounds);
-      }
-      else colliders.push(object);
-    }
-    object.children.forEach(collectColliders);
-  };
-  collisionObjects.forEach(collectColliders);
+  const { colliders, walkableBounds, roofBounds, stairBounds, ramps } = collectCollisionData(collisionObjects);
 
   const floorAt = (position) => {
     const feet = position.y - eyeHeight;
     let floor = -Infinity;
     ramps.forEach((ramp) => {
-      const inside = position.x >= ramp.bounds.min.x - playerRadius &&
+      const inside =
+        position.x >= ramp.bounds.min.x - playerRadius &&
         position.x <= ramp.bounds.max.x + playerRadius &&
         position.z >= ramp.bounds.min.z - playerRadius &&
         position.z <= ramp.bounds.max.z + playerRadius;
@@ -85,18 +66,28 @@ export function updateMovement(controls, delta, collisionObjects = []) {
         0,
         1,
       );
-      const rampFloor = THREE.MathUtils.lerp(ramp.bottom.y, ramp.top.y, progress);
-      if (rampFloor <= feet + maxStepHeight && rampFloor > floor) floor = rampFloor;
+      const rampFloor = THREE.MathUtils.lerp(
+        ramp.bottom.y,
+        ramp.top.y,
+        progress,
+      );
+      if (rampFloor <= feet + maxStepHeight && rampFloor > floor)
+        floor = rampFloor;
     });
 
     if (floor > -Infinity) return floor;
 
     walkableBounds.forEach((bounds) => {
-      const inside = position.x >= bounds.min.x - playerRadius &&
+      const inside =
+        position.x >= bounds.min.x - playerRadius &&
         position.x <= bounds.max.x + playerRadius &&
         position.z >= bounds.min.z - playerRadius &&
         position.z <= bounds.max.z + playerRadius;
-      if (inside && bounds.max.y <= feet + maxStepHeight && bounds.max.y > floor) {
+      if (
+        inside &&
+        bounds.max.y <= feet + maxStepHeight &&
+        bounds.max.y > floor
+      ) {
         floor = bounds.max.y;
       }
     });
@@ -108,10 +99,13 @@ export function updateMovement(controls, delta, collisionObjects = []) {
       new THREE.Vector3(position.x, position.y - playerHeight / 2, position.z),
       playerSize,
     );
-    if (colliders.some((object) => {
-      const objectBounds = new THREE.Box3().setFromObject(object);
-      return playerBounds.intersectsBox(objectBounds);
-    })) return true;
+    if (
+      colliders.some((object) => {
+        const objectBounds = new THREE.Box3().setFromObject(object);
+        return playerBounds.intersectsBox(objectBounds);
+      })
+    )
+      return true;
 
     const feet = position.y - eyeHeight;
     const intersectsRoofFromBelow = roofBounds.some((bounds) => {
@@ -119,7 +113,10 @@ export function updateMovement(controls, delta, collisionObjects = []) {
     });
     if (intersectsRoofFromBelow && !canClimb) return true;
 
-    return !canClimb && stairBounds.some((bounds) => playerBounds.intersectsBox(bounds));
+    return (
+      !canClimb &&
+      stairBounds.some((bounds) => playerBounds.intersectsBox(bounds))
+    );
   };
 
   const localDirection = new THREE.Vector3(
@@ -129,10 +126,12 @@ export function updateMovement(controls, delta, collisionObjects = []) {
   );
   if (localDirection.lengthSq() > 0) localDirection.normalize();
 
-  const forward = new THREE.Vector3(0, 0, -1)
-    .applyQuaternion(controls.object.quaternion);
-  const right = new THREE.Vector3(1, 0, 0)
-    .applyQuaternion(controls.object.quaternion);
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(
+    controls.object.quaternion,
+  );
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(
+    controls.object.quaternion,
+  );
   forward.y = 0;
   right.y = 0;
   forward.normalize();
@@ -151,18 +150,19 @@ export function updateMovement(controls, delta, collisionObjects = []) {
       const fullPosition = start.clone().add(substepMovement);
       const currentFloor = floorAt(start);
       const candidateFloor = floorAt(fullPosition);
-      const canClimb = candidateFloor > currentFloor &&
+      const canClimb =
+        candidateFloor > currentFloor &&
         candidateFloor - (start.y - eyeHeight) <= maxStepHeight;
 
-        if (!collidesAt(fullPosition, canClimb)) {
+      if (!collidesAt(fullPosition, canClimb)) {
         controls.object.position.copy(fullPosition);
-          if (canClimb) {
-            controls.object.position.y += Math.min(
-              candidateFloor + 0.03 - (controls.object.position.y - eyeHeight),
-              6 * delta,
-            );
-            verticalVelocity = 0;
-          }
+        if (canClimb) {
+          controls.object.position.y += Math.min(
+            candidateFloor + 0.03 - (controls.object.position.y - eyeHeight),
+            6 * delta,
+          );
+          verticalVelocity = 0;
+        }
         continue;
       }
 
@@ -170,27 +170,38 @@ export function updateMovement(controls, delta, collisionObjects = []) {
       const xPosition = start.clone();
       xPosition.x += substepMovement.x;
       const xFloor = floorAt(xPosition);
-      const xCanClimb = xFloor > currentFloor &&
+      const xCanClimb =
+        xFloor > currentFloor &&
         xFloor - (start.y - eyeHeight) <= maxStepHeight;
-      if (!collidesAt(xPosition, xCanClimb)) controls.object.position.x = xPosition.x;
+      if (!collidesAt(xPosition, xCanClimb))
+        controls.object.position.x = xPosition.x;
 
       const zPosition = controls.object.position.clone();
       zPosition.z += substepMovement.z;
       const zFloor = floorAt(zPosition);
-      const zCanClimb = zFloor > currentFloor &&
+      const zCanClimb =
+        zFloor > currentFloor &&
         zFloor - (start.y - eyeHeight) <= maxStepHeight;
-      if (!collidesAt(zPosition, zCanClimb)) controls.object.position.z = zPosition.z;
+      if (!collidesAt(zPosition, zCanClimb))
+        controls.object.position.z = zPosition.z;
     }
   }
 
   const floor = floorAt(controls.object.position);
   const feet = controls.object.position.y - eyeHeight;
   const targetFeet = floor + 0.03;
-  if (floor > -Infinity && targetFeet > feet && targetFeet - feet <= maxStepHeight) {
+  if (
+    floor > -Infinity &&
+    targetFeet > feet &&
+    targetFeet - feet <= maxStepHeight
+  ) {
     controls.object.position.y += Math.min(targetFeet - feet, 6 * delta);
     verticalVelocity = 0;
   } else {
-    verticalVelocity = Math.max(verticalVelocity - gravity * delta, -maxFallSpeed);
+    verticalVelocity = Math.max(
+      verticalVelocity - gravity * delta,
+      -maxFallSpeed,
+    );
     controls.object.position.y += verticalVelocity * delta;
     if (floor > -Infinity && controls.object.position.y - eyeHeight <= floor) {
       controls.object.position.y = floor + eyeHeight;
