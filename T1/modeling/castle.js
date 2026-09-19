@@ -185,43 +185,47 @@ function construirPredioInterno(grupo, offsetX, offsetZ, matPedra, matMadeira, m
   grupoPredio.add(telhado);
 
   // Escadas para o telhado
-  for (let i = 0; i < 21; i++) {
+  const quantidadeDegrausPredio = 26;
+  const profundidadeDegrauPredio = 0.65;
+  const zTopoEscadaPredio = 8.25;
+  const zBaseEscadaPredio = zTopoEscadaPredio +
+    (quantidadeDegrausPredio - 1) * profundidadeDegrauPredio;
+
+  for (let i = 0; i < quantidadeDegrausPredio; i++) {
     const alturaDegrau = (i + 1) * 0.5;
-    const profundidade = 0.8;
-    const degrau = new THREE.Mesh(new THREE.BoxGeometry(3.5, alturaDegrau, profundidade), matPedra);
-    degrau.position.set(9.75, alturaDegrau / 2, -8 + (i * profundidade));
+    const degrau = new THREE.Mesh(
+      new THREE.BoxGeometry(2, alturaDegrau, profundidadeDegrauPredio),
+      matPedra,
+    );
+    degrau.position.set(
+      5,
+      alturaDegrau / 2,
+      zBaseEscadaPredio - (i * profundidadeDegrauPredio),
+    );
     degrau.userData.collisionType = "walkable";
     degrau.userData.isStairStep = true;
     grupoPredio.add(degrau);
   }
 
   const rampaPredio = new THREE.Mesh(
-    new THREE.BoxGeometry(3.5, 0.1, 16.8),
+    new THREE.BoxGeometry(
+      2,
+      0.1,
+      zBaseEscadaPredio - zTopoEscadaPredio + profundidadeDegrauPredio,
+    ),
     new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
   );
-  rampaPredio.position.set(9.75, 0.25, 0.4);
+  rampaPredio.position.set(
+    5,
+    0.25,
+    (zBaseEscadaPredio + zTopoEscadaPredio) / 2,
+  );
   rampaPredio.userData.collisionType = "ramp";
   rampaPredio.userData.ramp = {
-    bottom: new THREE.Vector3(9.75, 0.5, -8),
-    top: new THREE.Vector3(9.75, 10.5, 8.8),
+    bottom: new THREE.Vector3(0, 0.5, zBaseEscadaPredio + profundidadeDegrauPredio / 2),
+    top: new THREE.Vector3(0, quantidadeDegrausPredio * 0.5, zTopoEscadaPredio),
   };
   grupoPredio.add(rampaPredio);
-
-  const posZ_Topo = 9.75;
-  const patamar = new THREE.Mesh(new THREE.BoxGeometry(3.5, 10.5, 3.5), matPedra);
-  patamar.position.set(9.75, 10.5 / 2, posZ_Topo);
-  patamar.userData.collisionType = "walkable";
-  grupoPredio.add(patamar);
-
-  // Acesso lateral 
-  for (let j = 1; j <= 5; j++) {
-    const altDegrau = 10.5 + (j * 0.4);
-    const largX = 1.0;
-    const stepSide = new THREE.Mesh(new THREE.BoxGeometry(largX, altDegrau, 3.5), matPedra);
-    stepSide.position.set(9.75 - 1.75 - (j * largX) + 0.5, altDegrau / 2, posZ_Topo);
-    stepSide.userData.collisionType = "walkable";
-    grupoPredio.add(stepSide);
-  }
 
   const dobradica = new THREE.Group();
   dobradica.position.set(-3.5, 6, 7);
