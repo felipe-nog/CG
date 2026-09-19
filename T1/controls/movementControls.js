@@ -49,7 +49,8 @@ export function updateMovement(controls, delta, collisionObjects = []) {
   );
   let collisionOccurred = false;
 
-  const { colliders, walkableBounds, roofBounds, stairBounds, ramps } = collectCollisionData(collisionObjects);
+  const { colliders, walkableBounds, roofBounds, stairBounds, ramps } =
+    collectCollisionData(collisionObjects);
 
   const floorAt = (position) => {
     const feet = position.y - eyeHeight;
@@ -94,7 +95,8 @@ export function updateMovement(controls, delta, collisionObjects = []) {
     return floor;
   };
 
-  const collidesAt = (position, canClimb) => {
+  // ATUALIZE A FUNÇÃO collidesAt (adicionamos isTraversable e isClimbing)
+  const collidesAt = (position, isTraversable, isClimbing) => {
     playerBounds.setFromCenterAndSize(
       new THREE.Vector3(position.x, position.y - playerHeight / 2, position.z),
       playerSize,
@@ -111,10 +113,12 @@ export function updateMovement(controls, delta, collisionObjects = []) {
     const intersectsRoofFromBelow = roofBounds.some((bounds) => {
       return feet < bounds.max.y - 0.05 && playerBounds.intersectsBox(bounds);
     });
-    if (intersectsRoofFromBelow && !canClimb) return true;
+    // Ignora colisão com teto apenas se estiver ativamente subindo um degrau
+    if (intersectsRoofFromBelow && !isClimbing) return true;
 
+    // A escada só vira parede se o caminho NÃO for atravessável (ex: degrau alto demais)
     return (
-      !canClimb &&
+      !isTraversable &&
       stairBounds.some((bounds) => playerBounds.intersectsBox(bounds))
     );
   };
@@ -145,18 +149,24 @@ export function updateMovement(controls, delta, collisionObjects = []) {
 
     const substeps = Math.max(1, Math.ceil(desiredMovement.length() / 0.2));
     const substepMovement = desiredMovement.clone().divideScalar(substeps);
+
+    // ATUALIZE O LOOP DE SUBSTEPS
     for (let step = 0; step < substeps; step += 1) {
       const start = controls.object.position.clone();
       const fullPosition = start.clone().add(substepMovement);
       const currentFloor = floorAt(start);
       const candidateFloor = floorAt(fullPosition);
-      const canClimb =
-        candidateFloor > currentFloor &&
-        candidateFloor - (start.y - eyeHeight) <= maxStepHeight;
 
-      if (!collidesAt(fullPosition, canClimb)) {
+      // Separamos os conceitos:
+      // isTraversable: A diferença de altura permite passagem (seja subindo ou descendo)?
+      const isTraversable =
+        candidateFloor - (start.y - eyeHeight) <= maxStepHeight;
+      // needsClimb: O terreno da frente é mais alto E permite passagem?
+      const needsClimb = candidateFloor > currentFloor && isTraversable;
+
+      if (!collidesAt(fullPosition, isTraversable, needsClimb)) {
         controls.object.position.copy(fullPosition);
-        if (canClimb) {
+        if (needsClimb) {
           controls.object.position.y += Math.min(
             candidateFloor + 0.03 - (controls.object.position.y - eyeHeight),
             6 * delta,
@@ -167,22 +177,25 @@ export function updateMovement(controls, delta, collisionObjects = []) {
       }
 
       collisionOccurred = true;
+
+      // Checagem isolada para X
       const xPosition = start.clone();
       xPosition.x += substepMovement.x;
       const xFloor = floorAt(xPosition);
-      const xCanClimb =
-        xFloor > currentFloor &&
-        xFloor - (start.y - eyeHeight) <= maxStepHeight;
-      if (!collidesAt(xPosition, xCanClimb))
+      const xIsTraversable = xFloor - (start.y - eyeHeight) <= maxStepHeight;
+      const xNeedsClimb = xFloor > currentFloor && xIsTraversable;
+
+      if (!collidesAt(xPosition, xIsTraversable, xNeedsClimb))
         controls.object.position.x = xPosition.x;
 
+      // Checagem isolada para Z
       const zPosition = controls.object.position.clone();
       zPosition.z += substepMovement.z;
       const zFloor = floorAt(zPosition);
-      const zCanClimb =
-        zFloor > currentFloor &&
-        zFloor - (start.y - eyeHeight) <= maxStepHeight;
-      if (!collidesAt(zPosition, zCanClimb))
+      const zIsTraversable = zFloor - (start.y - eyeHeight) <= maxStepHeight;
+      const zNeedsClimb = zFloor > currentFloor && zIsTraversable;
+
+      if (!collidesAt(zPosition, zIsTraversable, zNeedsClimb))
         controls.object.position.z = zPosition.z;
     }
   }
