@@ -27,71 +27,75 @@ export function setupMovementControls(shootCallback) {
 export function updateMovement(controls, delta, collisionObjects = []) {
   keyboard.update();
 
-  if (!controls.isLocked) return;
-
-  const direction = new THREE.Vector3();
+  if (!controls.isLocked) return false;
 
   const isForward = keyboard.pressed("W") || keyboard.pressed("up");
   const isBackward = keyboard.pressed("S") || keyboard.pressed("down");
   const isLeft = keyboard.pressed("A") || keyboard.pressed("left");
   const isRight = keyboard.pressed("D") || keyboard.pressed("right");
 
-  const movementAmount = 10;
-
-  if(isForward) {
-    direction.z = movementAmount;
-  } else if(isBackward) {
-    direction.z = -movementAmount;
-  } else {
-    direction.z = 0;
-  }
-  
-  if(isLeft) {
-    direction.x = -movementAmount;
-  } else if(isRight) {
-    direction.x = movementAmount;
-  } else {
-    direction.x = 0;
-  }
-
-  direction.normalize(); 
-
   const playerBounds = new THREE.Box3();
   const playerSize = new THREE.Vector3(1, 2, 1);
-  const previousPosition = new THREE.Vector3();
   let collisionOccurred = false;
 
-  const collidesWithObject = () => {
-    playerBounds.setFromCenterAndSize(controls.object.position, playerSize);
-    return collisionObjects.some((object) => {
-      if (!object.visible) return false;
+  const colliders = [];
+  const collectColliders = (object) => {
+    if (!object.visible) return;
+    if (object.isMesh) colliders.push(object);
+    object.children.forEach(collectColliders);
+  };
+  collisionObjects.forEach(collectColliders);
 
+  const collidesAt = (position) => {
+    playerBounds.setFromCenterAndSize(position, playerSize);
+    return colliders.some((object) => {
       const objectBounds = new THREE.Box3().setFromObject(object);
       return playerBounds.intersectsBox(objectBounds);
     });
   };
 
-  const moveWithCollision = (move) => {
-    previousPosition.copy(controls.object.position);
-    move();
+  const localDirection = new THREE.Vector3(
+    isRight ? 1 : isLeft ? -1 : 0,
+    0,
+    isForward ? 1 : isBackward ? -1 : 0,
+  );
+  if (localDirection.lengthSq() === 0) return false;
+  localDirection.normalize();
 
-    if (collidesWithObject()) {
-      collisionOccurred = true;
-      controls.object.position.copy(previousPosition);
+  const forward = new THREE.Vector3(0, 0, -1)
+    .applyQuaternion(controls.object.quaternion);
+  const right = new THREE.Vector3(1, 0, 0)
+    .applyQuaternion(controls.object.quaternion);
+  forward.y = 0;
+  right.y = 0;
+  forward.normalize();
+  right.normalize();
+
+  const desiredMovement = new THREE.Vector3()
+    .addScaledVector(forward, localDirection.z)
+    .addScaledVector(right, localDirection.x)
+    .multiplyScalar(speed * delta);
+
+  const substeps = Math.max(1, Math.ceil(desiredMovement.length() / 0.2));
+  const substepMovement = desiredMovement.clone().divideScalar(substeps);
+  for (let step = 0; step < substeps; step += 1) {
+    const start = controls.object.position.clone();
+    const fullPosition = start.clone().add(substepMovement);
+
+    if (!collidesAt(fullPosition)) {
+      controls.object.position.copy(fullPosition);
+      continue;
     }
+
+    collisionOccurred = true;
+    const xPosition = start.clone();
+    xPosition.x += substepMovement.x;
+    if (!collidesAt(xPosition)) controls.object.position.x = xPosition.x;
+
+    const zPosition = controls.object.position.clone();
+    zPosition.z += substepMovement.z;
+    if (!collidesAt(zPosition)) controls.object.position.z = zPosition.z;
   };
-
-  if (isForward || isBackward) {
-    moveWithCollision(() => {
-      controls.moveForward(direction.z * speed * delta);
-    });
-  }
-
-  if (isLeft || isRight) {
-    moveWithCollision(() => {
-      controls.moveRight(direction.x * speed * delta);
-    });
-  }
 
   return collisionOccurred;
 }
