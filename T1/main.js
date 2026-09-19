@@ -57,7 +57,7 @@ window.addEventListener(
 let plano = createGroundPlaneXZ(200, 200, 10, 10, "rgb(60, 100, 120)");
 scene.add(plano);
 
-buildCastle(scene);
+const castelo = buildCastle(scene);
 
 let cameraEstavaColidindo = false;
 
@@ -67,7 +67,7 @@ function render() {
   requestAnimationFrame(render);
 
   const delta = clock.getDelta();
-  const ocorreuColisao = updateMovement(fpsControls, delta, scene.children[4].children);
+  const ocorreuColisao = updateMovement(fpsControls, delta, [castelo]);
 
   if (ocorreuColisao && !cameraEstavaColidindo) {
     console.warn("Colisão detectada entre a câmera e um objeto.");
