@@ -319,7 +319,7 @@ export function buildCastle(scene) {
 
   posMiniGuaritas.forEach(pos => {
     const miniTorrePortao = new THREE.Mesh(geomMiniTorre, matPedra);
-    miniTorrePortao.position.set(pos[0], 31.5, pos[1]);
+    miniTorrePortao.position.set(pos[0], 30, pos[1]);
     grupoCastelo.add(miniTorrePortao);
 
     // Dentes ao redor do topo do mini cilindro
@@ -328,7 +328,7 @@ export function buildCastle(scene) {
       const dente = new THREE.Mesh(geomDenteMiniTorre, matPedra);
       dente.position.x = pos[0] + (Math.cos(angGuarita) * 1.3);
       dente.position.z = pos[1] + (Math.sin(angGuarita) * 1.3);
-      dente.position.y = 34.3;
+      dente.position.y = 32.7;
       dente.rotation.y = -angGuarita;
       grupoCastelo.add(dente);
     }
