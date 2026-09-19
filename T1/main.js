@@ -69,11 +69,6 @@ function render() {
   const delta = clock.getDelta();
   const ocorreuColisao = updateMovement(fpsControls, delta, [castelo]);
 
-  if (ocorreuColisao && !cameraEstavaColidindo) {
-    console.warn("Colisão detectada entre a câmera e um objeto.");
-  }
-  cameraEstavaColidindo = !!ocorreuColisao;
-
   if (cameraSystem.isOrbital()) {
     orbitControls.update();
     unMountShootingSystem(scene, camera);
