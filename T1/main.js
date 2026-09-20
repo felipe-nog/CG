@@ -55,6 +55,7 @@ window.addEventListener(
 );
 
 let plano = createGroundPlaneXZ(200, 200, 10, 10, "rgb(60, 100, 120)");
+plano.userData.collisionType = "walkable";
 scene.add(plano);
 
 const castelo = buildCastle(scene);
@@ -67,7 +68,7 @@ function render() {
   requestAnimationFrame(render);
 
   const delta = clock.getDelta();
-  const ocorreuColisao = updateMovement(fpsControls, delta, [castelo]);
+  const ocorreuColisao = updateMovement(fpsControls, delta, [castelo, plano]);
 
   if (cameraSystem.isOrbital()) {
     orbitControls.update();

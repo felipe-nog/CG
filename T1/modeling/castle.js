@@ -19,6 +19,11 @@ export function buildCastle(scene) {
   chaoTerra.userData.collisionType = "walkable";
   grupoCastelo.add(chaoTerra);
 
+  const chaoTerraEsqExt = new THREE.Mesh(new THREE.BoxGeometry(10, 0.1, 20), matTerra);
+  chaoTerraEsqExt.position.set(-40, 0.05, 10);
+  chaoTerraEsqExt.userData.collisionType = "walkable";
+  grupoCastelo.add(chaoTerraEsqExt);
+
   const chaoGramaEsq = new THREE.Mesh(new THREE.BoxGeometry(20, 0.15, 50), matGrama);
   chaoGramaEsq.position.set(-15, 0.08, 0);
   chaoGramaEsq.userData.collisionType = "walkable";
@@ -31,30 +36,48 @@ export function buildCastle(scene) {
 
   // Muralhas Externas
   const geomMuroHoriz = new THREE.BoxGeometry(80, 20, 4);
-  const geomMuroVert = new THREE.BoxGeometry(4, 20, 76);
+  const geomMuroVertEsq = new THREE.BoxGeometry(4, 20, 40);
+  const geomMuroVertDir = new THREE.BoxGeometry(4, 20, 70);
+  // Muros menores na esquerda
+  const geomMuroEsqPequeno = new THREE.BoxGeometry(1, 20, 20);
+  const geomMuroEmL = new THREE.BoxGeometry(8, 20, 1);
+  const geomComplementoMuroEmL = new THREE.BoxGeometry(1, 20, 19);
 
   const muroFundo = new THREE.Mesh(geomMuroHoriz, matPedra);
   muroFundo.position.set(0, 10, -40);
   grupoCastelo.add(muroFundo);
 
-  const muroEsq = new THREE.Mesh(geomMuroVert, matPedra);
-  muroEsq.position.set(-38, 10, 0);
+  const muroEsq = new THREE.Mesh(geomMuroVertEsq, matPedra);
+  muroEsq.position.set(-38, 10, -20);
   grupoCastelo.add(muroEsq);
 
-  const muroDir = new THREE.Mesh(geomMuroVert, matPedra);
+  const muroDir = new THREE.Mesh(geomMuroVertDir, matPedra);
   muroDir.position.set(38, 10, 0);
   grupoCastelo.add(muroDir);
 
-  const geomMuroFrenteEsq = new THREE.BoxGeometry(32, 20, 4);
+  const geomMuroFrenteEsq = new THREE.BoxGeometry(30, 20, 4);
 
   const muroFrenteEsq = new THREE.Mesh(geomMuroFrenteEsq, matPedra);
   muroFrenteEsq.position.set(-30, 10, 40);
   grupoCastelo.add(muroFrenteEsq);
 
-  const geomMuroFrenteDir = new THREE.BoxGeometry(32, 20, 4);
+  const geomMuroFrenteDir = new THREE.BoxGeometry(30, 20, 4);
   const muroFrenteDir = new THREE.Mesh(geomMuroFrenteDir, matPedra);
   muroFrenteDir.position.set(30, 10, 40);
   grupoCastelo.add(muroFrenteDir);
+
+  // Muros em L na esquerda
+  const muroEsqPequeno = new THREE.Mesh(geomMuroEsqPequeno, matPedra);
+  muroEsqPequeno.position.set(-45, 10, 10);
+  grupoCastelo.add(muroEsqPequeno);
+
+  const muroEmL = new THREE.Mesh(geomMuroEmL, matPedra); 
+  muroEmL.position.set(-41.5, 10, 20);
+  grupoCastelo.add(muroEmL);
+
+  const complementoMuroEmL = new THREE.Mesh(geomComplementoMuroEmL, matPedra); 
+  complementoMuroEmL.position.set(-38, 10, 29);
+  grupoCastelo.add(complementoMuroEmL);
 
   const alturaTopoMuro = 0.1;
   const topoMuroFundo = new THREE.Mesh(
@@ -88,6 +111,12 @@ export function buildCastle(scene) {
   const topoMuroFrenteDir = topoMuroFrenteEsq.clone();
   topoMuroFrenteDir.position.x = 24;
   grupoCastelo.add(topoMuroFrenteDir);
+
+  // Muro sobre porta
+  const geomMuroSobrePorta = new THREE.BoxGeometry(10, 12, 2);
+  const muroSobrePorta = new THREE.Mesh(geomMuroSobrePorta, matPedra);
+  muroSobrePorta.position.set(0, 22, 40);
+  grupoCastelo.add(muroSobrePorta);
 
   // Portão Principal
   const geomPortaPrincipal = new THREE.BoxGeometry(16, 16, 2);
@@ -211,10 +240,30 @@ export function buildCastle(scene) {
 
   // Guaritas
   const geomTorreCentro = new THREE.BoxGeometry(10, 28, 12);
+  const geomTorreComplementar = new THREE.BoxGeometry(10, 28, 12);
 
   const torreCentroFundo = new THREE.Mesh(geomTorreCentro, matPedra);
   torreCentroFundo.position.set(0, 14, -40);
   grupoCastelo.add(torreCentroFundo);
+
+  const torreMuroEmL = new THREE.Mesh(geomTorreComplementar, matPedra);
+  torreMuroEmL.position.set(-45, 14, 5);
+  grupoCastelo.add(torreMuroEmL);
+
+  // Mini Cilindro Guarita em cima da torreMuroEmL
+  const miniTorreMuroEmL = new THREE.Mesh(geomMiniTorre, matPedra);
+  miniTorreMuroEmL.position.set(-41.5, 29, 1);
+  grupoCastelo.add(miniTorreMuroEmL);
+
+  for (let j = 0; j < 5; j++) {
+    const angGuarita = (j * 2 * Math.PI) / 5;
+    const dente = new THREE.Mesh(geomDenteMiniTorre, matPedra);
+    dente.position.x = -41.5 + (Math.cos(angGuarita) * 1.3);
+    dente.position.z = 1 + (Math.sin(angGuarita) * 1.3);
+    dente.position.y = 31.5;
+    dente.rotation.y = -angGuarita;
+    grupoCastelo.add(dente);
+  }
 
   const torrePortaoEsq = new THREE.Mesh(geomTorreCentro, matPedra);
   torrePortaoEsq.position.set(-10, 14, 40);
@@ -235,6 +284,10 @@ export function buildCastle(scene) {
   const parapeitoPortaoDir = new THREE.Mesh(geomParapeitoTorrePortao, matPedra);
   parapeitoPortaoDir.position.set(10, 28, 40);
   grupoCastelo.add(parapeitoPortaoDir);
+
+  const parapeitoMuroEmL = new THREE.Mesh(geomParapeitoTorrePortao, matPedra);
+  parapeitoMuroEmL.position.set(-45, 28, 5);
+  grupoCastelo.add(parapeitoMuroEmL);
 
   const geomParapeitoMuroCentro = new THREE.BoxGeometry(16.4, 1.5, 11.8);
   const parapeitoMuroCentro = new THREE.Mesh(geomParapeitoMuroCentro, matPedra);
@@ -282,7 +335,7 @@ export function buildCastle(scene) {
     }
   }
 
-  // Garfos na parte de trás das torres do portão (Z traseiro ~ 33.3)
+  // Garfos na parte de trás das torres do portão 
   for (let x = -15.2; x <= -4.8; x += 1.5) {
     const garfo = new THREE.Mesh(geomGarfo, matPedra);
     garfo.position.set(x, yGarfo, 33.3);
@@ -328,6 +381,26 @@ export function buildCastle(scene) {
     const dente = new THREE.Mesh(geomDentePortao, matPedra);
     dente.position.set(15.4, yDente, z);
     grupoCastelo.add(dente);
+  }
+
+  // Dentes no topo da torreMuroEmL (Frente, Trás, Lateral Esquerda e Lateral Direita)
+  for (let x = -49.8; x <= -40.2; x += 1.8) {
+    const denteFrente = new THREE.Mesh(geomDentePortao, matPedra);
+    denteFrente.position.set(x, yDente, 11.4);
+    grupoCastelo.add(denteFrente);
+
+    const denteTras = new THREE.Mesh(geomDentePortao, matPedra);
+    denteTras.position.set(x, yDente, -1.4);
+    grupoCastelo.add(denteTras);
+  }
+  for (let z = -0.6; z <= 10.6; z += 1.8) {
+    const denteEsq = new THREE.Mesh(geomDentePortao, matPedra);
+    denteEsq.position.set(-50.4, yDente, z);
+    grupoCastelo.add(denteEsq);
+
+    const denteDir = new THREE.Mesh(geomDentePortao, matPedra);
+    denteDir.position.set(-39.6, yDente, z);
+    grupoCastelo.add(denteDir);
   }
 
   // Dentes no Muro Central (Frente e Trás)
