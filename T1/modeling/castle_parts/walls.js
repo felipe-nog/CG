@@ -95,4 +95,28 @@ export function buildWalls(grupoCastelo, materials) {
   const topoMuroFrenteDir = topoMuroFrenteEsq.clone();
   topoMuroFrenteDir.position.x = 24;
   grupoCastelo.add(topoMuroFrenteDir);
+
+  const topoMuroEsqPequeno = new THREE.Mesh(
+    new THREE.BoxGeometry(1, alturaTopoMuro, 20),
+    matPedra,
+  );
+  topoMuroEsqPequeno.position.set(-45, 20.05, 10);
+  topoMuroEsqPequeno.userData.collisionType = "walkable";
+  grupoCastelo.add(topoMuroEsqPequeno);
+
+  const topoMuroEmL = new THREE.Mesh(
+    new THREE.BoxGeometry(8, alturaTopoMuro, 1),
+    matPedra,
+  );
+  topoMuroEmL.position.set(-41.5, 20.05, 20);
+  topoMuroEmL.userData.collisionType = "walkable";
+  grupoCastelo.add(topoMuroEmL);
+
+  const topoComplementoMuroEmL = new THREE.Mesh(
+    new THREE.BoxGeometry(1, alturaTopoMuro, 19),
+    matPedra,
+  );
+  topoComplementoMuroEmL.position.set(-38, 20.05, 29);
+  topoComplementoMuroEmL.userData.collisionType = "walkable";
+  grupoCastelo.add(topoComplementoMuroEmL);
 }
