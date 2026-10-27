@@ -146,7 +146,11 @@ export function resolveVerticalMovement(controlsObject, delta, verticalVelocity,
   const feet = controlsObject.position.y - eyeHeight;
   const targetFeet = floor + 0.03;
 
-  if (floor > -Infinity && Math.abs(targetFeet - feet) <= maxStepHeight) {
+  if (
+    floor > -Infinity &&
+    verticalVelocity <= 0 &&
+    Math.abs(targetFeet - feet) <= maxStepHeight
+  ) {
     controlsObject.position.y += THREE.MathUtils.clamp(
       targetFeet - feet,
       -6 * delta,

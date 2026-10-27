@@ -10,7 +10,10 @@ import {
 // Entrada de Teclado e Mouse
 const keyboard = new KeyboardState();
 const speed = 12.0;
+const runMultiplier = 1.75;
+const jumpSpeed = 10.0;
 let verticalVelocity = 0;
+let isJumping = false;
 let onShoot = null;
 
 const onMouseDown = (event) => {
@@ -24,11 +27,16 @@ const onContextMenu = (event) => {
   event.preventDefault();
 };
 
+const onMovementKeyDown = (event) => {
+  if (event.code === "Space") event.preventDefault();
+};
+
 export function setupMovementControls(shootCallback) {
   onShoot = shootCallback;
 
   document.addEventListener("mousedown", onMouseDown);
   document.addEventListener("contextmenu", onContextMenu);
+  document.addEventListener("keydown", onMovementKeyDown);
 }
 
 // Atualização de Movimento
@@ -73,11 +81,20 @@ export function updateMovement(controls, delta, collisionObjects = []) {
     Math.abs(supportFeet - supportFloor) <= 0.15 &&
     verticalVelocity >= -0.5;
 
-  if (localDirection.lengthSq() > 0 && isGrounded) {
+  if (keyboard.down("space") && isGrounded) {
+    verticalVelocity = jumpSpeed;
+    isJumping = true;
+  }
+
+  const movementSpeed = keyboard.pressed("shift")
+    ? speed * runMultiplier
+    : speed;
+
+  if (localDirection.lengthSq() > 0 && (isGrounded || isJumping)) {
     const desiredMovement = new THREE.Vector3()
       .addScaledVector(forward, localDirection.z)
       .addScaledVector(right, localDirection.x)
-      .multiplyScalar(speed * delta);
+      .multiplyScalar(movementSpeed * delta);
 
     const substeps = Math.max(1, Math.ceil(desiredMovement.length() / 0.2));
     const substepMovement = desiredMovement.clone().divideScalar(substeps);
@@ -145,6 +162,14 @@ export function updateMovement(controls, delta, collisionObjects = []) {
     verticalVelocity,
     collisionContext,
   );
+
+  if (isJumping && verticalVelocity <= 0) {
+    const landingFloor = floorAt(controls.object.position);
+    const feet = controls.object.position.y - eyeHeight;
+    if (landingFloor > -Infinity && Math.abs(feet - landingFloor) <= 0.15) {
+      isJumping = false;
+    }
+  }
 
   return collisionOccurred;
 }
