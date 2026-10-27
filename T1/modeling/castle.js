@@ -8,6 +8,7 @@ import { buildCornerTowers } from "./castle_parts/towers.js";
 import { buildGuardTowers } from "./castle_parts/guardTowers.js";
 import { buildInternalBuilding } from "./castle_parts/buildings.js";
 import { buildWallStairs } from "./castle_parts/stairs.js";
+import { buildInteriorPortal } from "./castle_parts/interiorPortal.js";
 
 export { updateDoors } from "./castle_parts/doors.js";
 
@@ -33,6 +34,9 @@ export function buildCastle(scene) {
   // Edificações Internas
   buildInternalBuilding(grupoCastelo, -15, 0, materials, 1);
   buildInternalBuilding(grupoCastelo, 15, -15, materials, -1);
+
+  // Escotilha e pedestais do puzzle do interior
+  buildInteriorPortal(grupoCastelo, materials);
 
   // Escadas do muro
   buildWallStairs(grupoCastelo, materials.matPedra);
