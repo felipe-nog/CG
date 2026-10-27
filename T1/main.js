@@ -2,8 +2,6 @@ import * as THREE from "three";
 import {
   initRenderer,
   initCamera,
-  initDefaultBasicLight,
-  setDefaultMaterial,
   onWindowResize,
   createGroundPlaneXZ,
 } from "./libs/util/util.js";
@@ -13,18 +11,17 @@ import {
   updateMovement,
 } from "./controls/movementControls.js";
 import { buildCastle, updateDoors } from "./modeling/castle.js";
+import { setupDayNightLighting } from "./lighting/dayNightLighting.js";
 import {
   mountShootingSystem,
   setupShootingSystem,
   unMountShootingSystem,
 } from "./controls/shootingControls.js";
 
-let scene, renderer, camera, material, light, cameraSystem;
+let scene, renderer, camera, cameraSystem;
 
 scene = new THREE.Scene();
 renderer = initRenderer();
-material = setDefaultMaterial();
-light = initDefaultBasicLight(scene);
 camera = initCamera(new THREE.Vector3(0, 4, 10));
 cameraSystem = setupCameraSystem(camera, renderer.domElement);
 
@@ -58,8 +55,7 @@ let plano = createGroundPlaneXZ(200, 200, 10, 10, "rgb(60, 100, 120)");
 scene.add(plano);
 
 const castelo = buildCastle(scene);
-
-let cameraEstavaColidindo = false;
+setupDayNightLighting(scene, renderer, [castelo, plano]);
 
 render();
 
