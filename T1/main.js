@@ -52,6 +52,7 @@ window.addEventListener(
 );
 
 let plano = createGroundPlaneXZ(200, 200, 10, 10, "rgb(60, 100, 120)");
+plano.userData.collisionType = "walkable";
 scene.add(plano);
 
 const castelo = buildCastle(scene);
@@ -72,7 +73,7 @@ function render() {
     mountShootingSystem(scene, camera);
   }
 
-  shootingSystem.update(delta, scene.children);
+  shootingSystem.update(delta, [castelo, plano]);
 
   updateDoors(camera);
 

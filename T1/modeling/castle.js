@@ -9,6 +9,7 @@ import { buildGuardTowers } from "./castle_parts/guardTowers.js";
 import { buildInternalBuilding } from "./castle_parts/buildings.js";
 import { buildWallStairs } from "./castle_parts/stairs.js";
 import { buildInteriorPortal } from "./castle_parts/interiorPortal.js";
+import { buildWallWalkways } from "./castle_parts/wallWalkways.js";
 
 export { updateDoors } from "./castle_parts/doors.js";
 
@@ -22,11 +23,11 @@ export function buildCastle(scene) {
   // Modelagem do terreno e dos muros
   buildTerrain(grupoCastelo, materials);
   buildWalls(grupoCastelo, materials);
-  
+
   // Modelagem do portão e da porta
   buildGate(grupoCastelo, materials);
   buildGatehouse(grupoCastelo, materials.matPedra);
-  
+
   // Modelagem das torres
   buildCornerTowers(grupoCastelo, materials.matPedra);
   buildGuardTowers(grupoCastelo, materials.matPedra);
@@ -40,6 +41,9 @@ export function buildCastle(scene) {
 
   // Escadas do muro
   buildWallStairs(grupoCastelo, materials.matPedra);
+
+  // Passarelas elevadas conectando todos os muros
+  buildWallWalkways(grupoCastelo, materials.matPedra);
 
   return grupoCastelo;
 }

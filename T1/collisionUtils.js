@@ -9,6 +9,7 @@ export function collectCollisionData(collisionObjects) {
 
   const visit = (object) => {
     if (!object.visible) return;
+    if (object.userData.isProjectile || object.userData.isGun) return;
     if (object.isMesh) {
       const bounds = new THREE.Box3().setFromObject(object);
       if (object.userData.collisionType === "ramp") {

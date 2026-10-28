@@ -17,6 +17,7 @@ export function createGun(camera) {
   );
   const material = setDefaultMaterial(GUN_COLOR);
   const gun = new THREE.Mesh(geometry, material);
+  gun.userData.isGun = true;
 
   gun.position.copy(GUN_LOCAL_POSITION);
 
