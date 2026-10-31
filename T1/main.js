@@ -53,7 +53,9 @@ window.addEventListener(
   false,
 );
 
-let plano = createGroundPlaneXZ(200, 200, 10, 10, "rgb(60, 100, 120)");
+let plano = createGroundPlaneXZ(600, 600, 40, 40, "rgb(35, 75, 115)");
+plano.position.y = -0.5;
+plano.userData.collisionType = "walkable";
 scene.add(plano);
 
 const castelo = buildCastle(scene);

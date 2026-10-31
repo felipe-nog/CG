@@ -7,5 +7,8 @@ export function createCastleMaterials() {
     matTelhado: setDefaultMaterial("rgb(110, 110, 105)"),
     matGrama: setDefaultMaterial("rgb(85, 140, 50)"),
     matTerra: setDefaultMaterial("rgb(150, 130, 100)"),
+    matAreia: setDefaultMaterial("rgb(215, 195, 140)"),
+    matAgua: setDefaultMaterial("rgb(35, 80, 120)"),
+    matPedraEscura: setDefaultMaterial("rgb(140, 135, 125)"),
   };
 }
