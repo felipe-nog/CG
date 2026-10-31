@@ -37,8 +37,8 @@ export function setupShootingSystem(scene, camera) {
     dart.visible = false;
   }
 
-  function update(delta, collisionObjects) {
-    projectileSystem.update(delta, collisionObjects);
+  function update(delta, collisionObjects, targets) {
+    projectileSystem.update(delta, collisionObjects, targets);
     if (!dart.userData.ready) return;
     const restingDartZ = dart.userData.restZ;
 

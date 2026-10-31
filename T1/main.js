@@ -12,6 +12,7 @@ import {
 } from "./controls/movementControls.js";
 import { buildCastle, updateDoors } from "./modeling/castle.js";
 import { setupDayNightLighting } from "./lighting/dayNightLighting.js";
+import { setupEnemySystem } from "./controls/enemyControls.js";
 import {
   mountShootingSystem,
   setupShootingSystem,
@@ -55,7 +56,9 @@ let plano = createGroundPlaneXZ(200, 200, 10, 10, "rgb(60, 100, 120)");
 scene.add(plano);
 
 const castelo = buildCastle(scene);
-setupDayNightLighting(scene, renderer, [castelo, plano]);
+const lighting = setupDayNightLighting(scene, renderer, [castelo, plano]);
+
+const enemySystem = setupEnemySystem(scene, castelo, camera, () => {});
 
 render();
 
@@ -72,7 +75,8 @@ function render() {
     mountShootingSystem(scene, camera);
   }
 
-  shootingSystem.update(delta, [castelo, plano]);
+  enemySystem.update(delta, lighting.isNight());
+  shootingSystem.update(delta, [castelo, plano], enemySystem.targets);
 
   updateDoors(camera);
 

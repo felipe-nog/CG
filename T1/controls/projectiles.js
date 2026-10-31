@@ -4,7 +4,7 @@ import { createDart } from "../modeling/dart.js";
 
 const PROJECTILE_RADIUS = 0.06;
 const FORWARD = new THREE.Vector3(0, 0, -1);
-const PROJECTILE_SPEED = 90;
+const PROJECTILE_SPEED = 60;
 const PROJECTILE_MAX_DISTANCE = 100;
 const PROJECTILE_SIZE = new THREE.Vector3(
   PROJECTILE_RADIUS * 2,
@@ -16,6 +16,10 @@ export function createProjectileSystem(scene) {
   const projectiles = [];
   const projectileBounds = new THREE.Box3();
   const tipPosition = new THREE.Vector3();
+  const previousTip = new THREE.Vector3();
+  const hitSphere = new THREE.Sphere();
+  const segment = new THREE.Line3();
+  const closestPoint = new THREE.Vector3();
 
   // `origin` é a posição da ponta do dardo ao sair da besta.
   function spawnProjectile(origin, direction) {
@@ -55,7 +59,8 @@ export function createProjectileSystem(scene) {
     scene.remove(projectile.mesh);
   }
 
-  function update(delta, collisionObjects = []) {
+  // `targets`: objetos com isHittable(), getHitSphere(sphere) e onHit().
+  function update(delta, collisionObjects = [], targets = []) {
     if (projectiles.length === 0) return;
 
     // Calculado uma vez por frame (não por projétil) — a geometria estática
@@ -66,6 +71,8 @@ export function createProjectileSystem(scene) {
       const projectile = projectiles[i];
       const { mesh, direction, tipOffset } = projectile;
 
+      previousTip.copy(mesh.position).addScaledVector(direction, tipOffset);
+
       projectile.progress +=
         (PROJECTILE_SPEED * delta) / PROJECTILE_MAX_DISTANCE;
       mesh.position.lerpVectors(
@@ -74,6 +81,21 @@ export function createProjectileSystem(scene) {
         projectile.progress,
       );
       tipPosition.copy(mesh.position).addScaledVector(direction, tipOffset);
+
+      // Teste segmento × esfera evita que o dardo atravesse o alvo entre frames.
+      segment.set(previousTip, tipPosition);
+      const hitTarget = targets.find((target) => {
+        if (!target.isHittable()) return false;
+        target.getHitSphere(hitSphere);
+        segment.closestPointToPoint(hitSphere.center, true, closestPoint);
+        return closestPoint.distanceToSquared(hitSphere.center) <=
+          hitSphere.radius * hitSphere.radius;
+      });
+      if (hitTarget) {
+        hitTarget.onHit();
+        removeProjectile(i);
+        continue;
+      }
 
       if (collidesWithEnvironment(tipPosition, solidBounds)) {
         removeProjectile(i);
