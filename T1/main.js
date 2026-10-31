@@ -72,7 +72,7 @@ function render() {
     mountShootingSystem(scene, camera);
   }
 
-  shootingSystem.update(delta, scene.children);
+  shootingSystem.update(delta, [castelo, plano]);
 
   updateDoors(camera);
 

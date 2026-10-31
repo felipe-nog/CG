@@ -1,9 +1,9 @@
 import * as THREE from "three";
-import { setDefaultMaterial } from "../../libs/util/util.js";
 import { getSolidBounds } from "../collisionUtils.js";
+import { createDart } from "../modeling/dart.js";
 
-const PROJECTILE_RADIUS = 0.12;
-const PROJECTILE_COLOR = "rgb(255, 200, 0)";
+const PROJECTILE_RADIUS = 0.06;
+const FORWARD = new THREE.Vector3(0, 0, -1);
 const PROJECTILE_SPEED = 90;
 const PROJECTILE_MAX_DISTANCE = 100;
 const PROJECTILE_SIZE = new THREE.Vector3(
@@ -13,34 +13,40 @@ const PROJECTILE_SIZE = new THREE.Vector3(
 );
 
 export function createProjectileSystem(scene) {
-  const geometry = new THREE.SphereGeometry(PROJECTILE_RADIUS, 12, 12);
-  const material = setDefaultMaterial(PROJECTILE_COLOR);
-
   const projectiles = [];
   const projectileBounds = new THREE.Box3();
+  const tipPosition = new THREE.Vector3();
 
+  // `origin` é a posição da ponta do dardo ao sair da besta.
   function spawnProjectile(origin, direction) {
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.copy(origin);
+    const normalizedDirection = direction.clone().normalize();
+
+    const mesh = createDart();
     mesh.userData.isProjectile = true;
+    mesh.quaternion.setFromUnitVectors(FORWARD, normalizedDirection);
+    // O mesh é posicionado pelo centro da haste; `origin` marca a ponta.
+    mesh.position
+      .copy(origin)
+      .addScaledVector(normalizedDirection, -mesh.userData.tipOffset);
 
     scene.add(mesh);
 
-    const normalizedDirection = direction.clone().normalize();
     const target = origin
       .clone()
       .addScaledVector(normalizedDirection, PROJECTILE_MAX_DISTANCE);
 
     projectiles.push({
       mesh,
-      origin: origin.clone(),
-      target,
+      tipOffset: mesh.userData.tipOffset,
+      direction: normalizedDirection,
+      origin: mesh.position.clone(),
+      target: target.addScaledVector(normalizedDirection, -mesh.userData.tipOffset),
       progress: 0,
     });
   }
 
-  function collidesWithEnvironment(mesh, solidBounds) {
-    projectileBounds.setFromCenterAndSize(mesh.position, PROJECTILE_SIZE);
+  function collidesWithEnvironment(tip, solidBounds) {
+    projectileBounds.setFromCenterAndSize(tip, PROJECTILE_SIZE);
     return solidBounds.some((bounds) => projectileBounds.intersectsBox(bounds));
   }
 
@@ -58,16 +64,18 @@ export function createProjectileSystem(scene) {
 
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const projectile = projectiles[i];
+      const { mesh, direction, tipOffset } = projectile;
 
       projectile.progress +=
         (PROJECTILE_SPEED * delta) / PROJECTILE_MAX_DISTANCE;
-      projectile.mesh.position.lerpVectors(
+      mesh.position.lerpVectors(
         projectile.origin,
         projectile.target,
         projectile.progress,
       );
+      tipPosition.copy(mesh.position).addScaledVector(direction, tipOffset);
 
-      if (collidesWithEnvironment(projectile.mesh, solidBounds)) {
+      if (collidesWithEnvironment(tipPosition, solidBounds)) {
         removeProjectile(i);
         continue;
       }
