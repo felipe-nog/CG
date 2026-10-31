@@ -51,7 +51,7 @@ window.addEventListener(
   false,
 );
 
-let plano = createGroundPlaneXZ(300, 300, 20, 20, "rgb(35, 75, 115)");
+let plano = createGroundPlaneXZ(600, 600, 40, 40, "rgb(35, 75, 115)");
 plano.position.y = -0.5;
 plano.userData.collisionType = "walkable";
 scene.add(plano);

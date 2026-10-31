@@ -33,7 +33,7 @@ export function buildWallWalkways(grupoCastelo, matPedra) {
   createSegment(3.5, 6, 6.5, -36.0);
 
   // CANTO TRASEIRO-DIREITO
-  createSegment(7, 80, 32.5, 0);
+  createSegment(7, 69, 32.5, 0);
 
   // CANTO FRONTAL-DIREITO
   // Conecta Muro Direito ao Muro da Frente Direito contornando a torre
@@ -61,4 +61,11 @@ export function buildWallWalkways(grupoCastelo, matPedra) {
   // CORREDOR DE INTEGRAÇÃO DO MURO EM L (Lateral Esquerda)
   // Garante continuidade de trânsito em x = -38 entre z = 0 e z = 20
   createSegment(4, 20, -38.0, 10.0);
+
+  // PLATAFORMAS DE ACESSO ÀS 4 GUARITAS DE CANTO
+  // Conectam as passarelas dos muros diretamente aos vãos das portas das torres
+  createSegment(5.0, 5.0, -36.0, -36.0);
+  createSegment(9.5, 5.0, 33.75, -36.0);
+  createSegment(5.0, 5.0, 36.0, 36.0);
+  createSegment(5.0, 5.0, -36.0, 36.0);
 }

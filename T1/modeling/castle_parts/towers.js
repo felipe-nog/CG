@@ -9,6 +9,11 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
   const yAndar = 20.05;
   const yDeck = 26.5;
   const auxMat = new THREE.Matrix4();
+  const matInvisivel = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
 
   function createSlitCutter(largura = 0.9, alturaRet = 2.2, profundidade = 4.0) {
     const box = new THREE.Mesh(new THREE.BoxGeometry(largura, alturaRet, profundidade));
@@ -24,7 +29,7 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
     return CSG.fromMesh(box).union(CSG.fromMesh(arco));
   }
 
-  function createDoorCutter(largura = 2.6, alturaRet = 3.4, profundidade = 4.5) {
+  function createDoorCutter(largura = 2.6, alturaRet = 3.4, profundidade = 6.0) {
     const box = new THREE.Mesh(new THREE.BoxGeometry(largura, alturaRet, profundidade));
     box.position.set(0, alturaRet / 2, 0);
     box.updateMatrix();
@@ -99,13 +104,13 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
     const grupoTorre = new THREE.Group();
     grupoTorre.position.set(torre.x, 0, torre.z);
 
-    // 1. Cilindro Externo contínuo de altura 30 (y = 0 a 30)
+    // Cilindro Externo contínuo de altura 30
     const geomOuter = new THREE.CylinderGeometry(raioTorre, raioTorre, altTorre, 24);
     const outerMesh = new THREE.Mesh(geomOuter);
     outerMesh.position.set(0, altTorre / 2, 0);
     outerMesh.updateMatrix();
 
-    // 2. Cavidade Interna escavada via CSG na parte superior (y = 20 a 30.5)
+    // Cavidade Interna escavada via CSG na parte superior
     const altCavidade = altTorre - yAndar + 0.5;
     const geomInner = new THREE.CylinderGeometry(raioInterno, raioInterno, altCavidade, 24);
     const innerMesh = new THREE.Mesh(geomInner);
@@ -114,19 +119,19 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
 
     let csgTorre = CSG.fromMesh(outerMesh).subtract(CSG.fromMesh(innerMesh));
 
-    // 3. Porta em arco recortada na altura da passarela (y = 20.05) voltada para o caminho de ronda
-    const doorCutter = createDoorCutter(2.6, 3.4, 4.5);
+    // Porta em arco recortada na altura da passarela voltada para o caminho de ronda
+    const doorCutter = createDoorCutter(2.6, 3.4, 6.0);
     const doorMesh = CSG.toMesh(doorCutter, auxMat);
     doorMesh.position.set(
       Math.cos(torre.doorAng) * 5.0,
-      yAndar,
+      yAndar + 0.05,
       Math.sin(torre.doorAng) * 5.0,
     );
     doorMesh.rotation.y = -torre.doorAng + Math.PI / 2;
     doorMesh.updateMatrix();
     csgTorre = csgTorre.subtract(CSG.fromMesh(doorMesh));
 
-    // 4. Seteiras CSG (base reta + topo curvo) voltadas para o lado externo no nível do deck
+    // Seteiras CSG
     torre.slitAngs.forEach((ang) => {
       const slitCutter = createSlitCutter(0.9, 2.2, 4.0);
       const slitMesh = CSG.toMesh(slitCutter, auxMat);
@@ -147,55 +152,45 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
     meshTorre.userData.collisionType = "none";
     grupoTorre.add(meshTorre);
 
-    // 5. Colisor da Base sólida (y = 0 a 20): impede atravessar a torre no chão do pátio
+    // 5. Colisor da Base sólida (y = 0 a 18.0): impede atravessar a torre no chão do pátio
+    // Termina em y = 18.0 para nunca colidir com o jogador andando na passarela (y = 20.05)
+    const altBaseColisor = 18.0;
     const baseCollider = new THREE.Mesh(
-      new THREE.CylinderGeometry(raioTorre - 0.1, raioTorre - 0.1, yAndar, 16),
+      new THREE.CylinderGeometry(raioTorre - 0.1, raioTorre - 0.1, altBaseColisor, 16),
+      matInvisivel,
     );
-    baseCollider.position.set(0, yAndar / 2, 0);
-    baseCollider.visible = false;
+    baseCollider.position.set(0, altBaseColisor / 2, 0);
     grupoTorre.add(baseCollider);
 
-    // 6. Piso transitável da câmara interna da torre (y = 20.05)
+    // 6. Piso transitável da câmara interna da torre (y = 20.05, topo em 20.10)
     const pisoTorre = new THREE.Mesh(
-      new THREE.CylinderGeometry(raioInterno - 0.05, raioInterno - 0.05, 0.2, 24),
+      new THREE.CylinderGeometry(raioInterno - 0.02, raioInterno - 0.02, 0.1, 24),
       matPedra,
     );
     pisoTorre.position.set(0, yAndar, 0);
+    pisoTorre.castShadow = true;
+    pisoTorre.receiveShadow = true;
     pisoTorre.userData.collisionType = "walkable";
     grupoTorre.add(pisoTorre);
 
-    // 7. Escadaria reta alinhada ao eixo Z ligando o piso da passarela (y = 20.05) ao deck superior (y = 26.5)
-    const numDegraus = 12;
-    const deltaZ = torre.zEnd - torre.zStart;
-    const deltaY = yDeck - yAndar;
-    const compDegrau = Math.abs(deltaZ) / numDegraus;
-
-    for (let i = 0; i < numDegraus; i++) {
-      const frac = (i + 1) / numDegraus;
-      const zStep = torre.zStart + (i + 0.5) * (deltaZ / numDegraus);
-      const stepH = yAndar + frac * deltaY;
-
-      const degrau = new THREE.Mesh(
-        new THREE.BoxGeometry(2.0, stepH - yAndar, compDegrau * 0.98),
-        matPedra,
-      );
-      degrau.position.set(torre.stairX, yAndar + (stepH - yAndar) / 2, zStep);
-      degrau.userData.collisionType = "none";
-      grupoTorre.add(degrau);
-    }
-
-    // Rampa suave de colisão estritamente alinhada ao eixo Z para subida e descida 100% fluidas
-    const rampa = new THREE.Mesh(
-      new THREE.BoxGeometry(2.2, 0.1, Math.abs(deltaZ)),
-      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+    // Soleira transitável que atravessa o vão da porta (r = 4.7 a 6.9)
+    // Garante chão sólido contínuo de pedra sob o arco da porta, eliminando qualquer vão/buraco
+    const soleiraPorta = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 0.1, 2.2),
+      matPedra,
     );
-    rampa.position.set(torre.stairX, (yAndar + yDeck) / 2, (torre.zStart + torre.zEnd) / 2);
-    rampa.userData.collisionType = "ramp";
-    rampa.userData.ramp = {
-      bottom: new THREE.Vector3(torre.stairX, yAndar, torre.zStart),
-      top: new THREE.Vector3(torre.stairX, yDeck, torre.zEnd),
-    };
-    grupoTorre.add(rampa);
+    soleiraPorta.position.set(
+      Math.cos(torre.doorAng) * 5.8,
+      yAndar,
+      Math.sin(torre.doorAng) * 5.8,
+    );
+    soleiraPorta.rotation.y = -torre.doorAng + Math.PI / 2;
+    soleiraPorta.castShadow = true;
+    soleiraPorta.receiveShadow = true;
+    soleiraPorta.userData.collisionType = "walkable";
+    grupoTorre.add(soleiraPorta);
+
+
 
     // 8. Deck superior de observação transitável (y = 26.5)
     const deckTopo = new THREE.Mesh(
@@ -247,24 +242,32 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
       grupoTorre.add(dente);
     }
 
-    // 10. Paredes de proteção perimetral do deck superior (y = 26.5 a 30) para evitar queda no vazio
-    for (let k = 0; k < 8; k++) {
-      const angP = (k * 2 * Math.PI) / 8;
-      // Não bloqueia a entrada da porta no ângulo da passarela
-      const diffAng = Math.abs(angP - torre.doorAng);
-      if (diffAng < 0.45 || Math.abs(diffAng - Math.PI * 2) < 0.45) continue;
+    // 10. Colisores das paredes perimetrais da torre (y = 20 a 32.5)
+    // Impede o jogador de atravessar as paredes tanto no nível do piso quanto no deck
+    const numSegs = 24;
+    const rMid = 5.5;
+    const segW = ((2 * Math.PI * rMid) / numSegs) * 1.05;
+    const segT = 0.6;
+    const hColisor = 12.5;
 
-      const colisorBorda = new THREE.Mesh(
-        new THREE.BoxGeometry(3.6, 3.5, 0.4),
+    for (let k = 0; k < numSegs; k++) {
+      const ang = (k * 2 * Math.PI) / numSegs;
+      let diffAng = Math.abs(ang - torre.doorAng) % (Math.PI * 2);
+      if (diffAng > Math.PI) diffAng = 2 * Math.PI - diffAng;
+      // Não bloqueia a passagem da porta
+      if (diffAng < 0.35) continue;
+
+      const colisorParede = new THREE.Mesh(
+        new THREE.BoxGeometry(segW, hColisor, segT),
+        matInvisivel,
       );
-      colisorBorda.position.set(
-        Math.cos(angP) * 5.1,
-        yDeck + 1.75,
-        Math.sin(angP) * 5.1,
+      colisorParede.position.set(
+        Math.cos(ang) * rMid,
+        yAndar + hColisor / 2,
+        Math.sin(ang) * rMid,
       );
-      colisorBorda.rotation.y = -angP + Math.PI / 2;
-      colisorBorda.visible = false;
-      grupoTorre.add(colisorBorda);
+      colisorParede.rotation.y = -ang + Math.PI / 2;
+      grupoTorre.add(colisorParede);
     }
 
     grupoCastelo.add(grupoTorre);
