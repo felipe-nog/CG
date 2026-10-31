@@ -5,7 +5,7 @@ import { OBJLoader } from "../build/jsm/loaders/OBJLoader.js";
 const ASSET_PATH = "./assets/crossbow/";
 
 export const CROSSBOW_LOCAL_POSITION = new THREE.Vector3(0.17, -0.15, -0.5);
-const CROSSBOW_SCALE = 0.6;
+const CROSSBOW_SCALE = 0.8;
 // O virote do asset é pequeno demais para ser percebido em primeira pessoa.
 const BOLT_SCALE = 2.5;
 
@@ -75,12 +75,12 @@ export function createCrossbow(camera) {
       dart.add(bolt);
 
       // Cópia em escala de mundo para os projéteis em voo (aponta para -Z).
+      // O giro de 180° fica no pivô: girar o próprio virote deslocaria o centro.
       const flying = new THREE.Group();
-      const flyingBolt = bolt.clone();
-      flyingBolt.rotation.y = Math.PI;
-      flying.add(flyingBolt);
-      flying.scale.setScalar(CROSSBOW_SCALE * BOLT_SCALE);
+      flying.rotation.y = Math.PI;
+      flying.add(bolt.clone());
       const holder = new THREE.Group();
+      holder.scale.setScalar(CROSSBOW_SCALE * BOLT_SCALE);
       holder.add(flying);
       holder.userData.tipOffset =
         ((box.max.z - box.min.z) / 2) * CROSSBOW_SCALE * BOLT_SCALE;
@@ -102,8 +102,6 @@ export function createCrossbow(camera) {
     .catch((error) => console.error("Falha ao carregar a besta:", error));
 
   crossbow.position.copy(CROSSBOW_LOCAL_POSITION);
-  crossbow.rotation.x = 0.03;
-  crossbow.rotation.y = 0.08;
   crossbow.scale.setScalar(CROSSBOW_SCALE);
   camera.add(crossbow);
 
