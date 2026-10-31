@@ -1,0 +1,38 @@
+# Blender 3.5.1 MTL File: 'None'
+# www.blender.org
+
+newmtl bolt_texture
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd E:/galeria/blender/Textures/medieval_crossbow/bolt_color.png
+map_Ns E:/galeria/blender/Textures/medieval_crossbow/bolt_roughness.png
+map_refl E:/galeria/blender/Textures/medieval_crossbow/bolt_metalness.png
+map_Bump -bm 1.000000 E:/galeria/blender/Textures/medieval_crossbow/bolt_normal.png
+
+newmtl crossbow_dynamic_parts_texture
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_dynamic_parts_color.png
+map_Ns E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_dynamic_parts_roughness.png
+map_refl E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_dynamic_parts_metalness.png
+map_Bump -bm 0.800000 E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_dynamic_parts_normal.png
+
+newmtl crossbow_static_parts_texture
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_static_parts_color.png
+map_Ns E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_static_parts_roughness.png
+map_refl E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_static_parts_metalness.png
+map_Bump -bm 0.700000 E:/galeria/blender/Textures/medieval_crossbow/medieval_crossbow_static_parts_normal.png

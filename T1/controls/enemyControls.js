@@ -58,6 +58,9 @@ function createEnemy(type, template, spawnWorld, patrol, castleScale) {
   model.traverse((object) => {
     if (!object.isMesh) return;
     object.material = object.material.clone();
+    // Já transparente desde o início: mudar `transparent` na hora da morte
+    // recompila o shader (travada). Com opacidade 1 e depthWrite o visual é igual.
+    object.material.transparent = true;
     object.castShadow = true;
     object.receiveShadow = true;
   });
@@ -167,10 +170,6 @@ export function setupEnemySystem(scene, castle, camera, onEnemyDefeated) {
     if (enemy.hp <= 0) {
       enemy.state = "dying";
       enemy.deathTimer = 0;
-      forEachMaterial(enemy, (material) => {
-        material.transparent = true;
-        material.needsUpdate = true;
-      });
       const dropPosition = enemy.holder.position.clone();
       dropPosition.y = enemy.baseY + 1.4;
       onEnemyDefeated(dropPosition);
