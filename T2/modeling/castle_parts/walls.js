@@ -1,7 +1,24 @@
 import * as THREE from "three";
+import { CSG } from "../../libs/other/CSGMesh.js";
 
 export function buildWalls(grupoCastelo, materials) {
   const { matPedra } = materials;
+  const auxMat = new THREE.Matrix4();
+
+  function createSlitCutter(width = 1.1, straightHeight = 3.2, depth = 6) {
+    const stem = new THREE.Mesh(new THREE.BoxGeometry(width, straightHeight, depth));
+    stem.position.y = straightHeight / 2;
+    stem.updateMatrix();
+
+    const arch = new THREE.Mesh(
+      new THREE.CylinderGeometry(width / 2, width / 2, depth, 16),
+    );
+    arch.rotation.x = Math.PI / 2;
+    arch.position.y = straightHeight;
+    arch.updateMatrix();
+
+    return CSG.fromMesh(stem).union(CSG.fromMesh(arch));
+  }
 
   // Geometrias dos muros perimetrais
   const geomMuroHoriz = new THREE.BoxGeometry(70, 20, 4);
@@ -30,12 +47,34 @@ export function buildWalls(grupoCastelo, materials) {
   muroDir.position.set(38, 10, 0);
   grupoCastelo.add(muroDir);
 
-  const muroFrenteEsq = new THREE.Mesh(geomMuroFrenteEsq, matPedra);
-  muroFrenteEsq.position.set(-21.5, 10, 40);
+  const muroFrenteEsqBase = new THREE.Mesh(geomMuroFrenteEsq, matPedra);
+  muroFrenteEsqBase.position.set(-21.5, 10, 40);
+  muroFrenteEsqBase.updateMatrix();
+  let muroFrenteEsqCSG = CSG.fromMesh(muroFrenteEsqBase);
+  [-28, -20].forEach((x) => {
+    const cutter = CSG.toMesh(createSlitCutter(), auxMat);
+    cutter.position.set(x, 8, 40);
+    cutter.updateMatrix();
+    muroFrenteEsqCSG = muroFrenteEsqCSG.subtract(CSG.fromMesh(cutter));
+  });
+  const muroFrenteEsq = CSG.toMesh(muroFrenteEsqCSG, auxMat, matPedra);
+  muroFrenteEsq.castShadow = true;
+  muroFrenteEsq.receiveShadow = true;
   grupoCastelo.add(muroFrenteEsq);
 
-  const muroFrenteDir = new THREE.Mesh(geomMuroFrenteDir, matPedra);
-  muroFrenteDir.position.set(21.5, 10, 40);
+  const muroFrenteDirBase = new THREE.Mesh(geomMuroFrenteDir, matPedra);
+  muroFrenteDirBase.position.set(21.5, 10, 40);
+  muroFrenteDirBase.updateMatrix();
+  let muroFrenteDirCSG = CSG.fromMesh(muroFrenteDirBase);
+  [20, 28].forEach((x) => {
+    const cutter = CSG.toMesh(createSlitCutter(), auxMat);
+    cutter.position.set(x, 8, 40);
+    cutter.updateMatrix();
+    muroFrenteDirCSG = muroFrenteDirCSG.subtract(CSG.fromMesh(cutter));
+  });
+  const muroFrenteDir = CSG.toMesh(muroFrenteDirCSG, auxMat, matPedra);
+  muroFrenteDir.castShadow = true;
+  muroFrenteDir.receiveShadow = true;
   grupoCastelo.add(muroFrenteDir);
 
   // Construção dos muros em L na esquerda

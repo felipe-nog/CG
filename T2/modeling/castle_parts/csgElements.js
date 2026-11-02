@@ -67,39 +67,9 @@ export function buildCSGElements(grupoCastelo, materials) {
   molduraPortico.userData.collisionType = "none";
   grupoCastelo.add(molduraPortico);
 
-  // =============================================================
   // 2. SETEIRAS NOS MUROS EXTERNOS VIA CSG
-  // Painéis de muralha com seteiras autênticas recortadas via CSG
-  // =============================================================
 
-  // 2.1 Seteiras nos Muros Frontais (ladeando o portão, voltadas para o acesso)
-  const configsSeteirasFrente = [
-    { xCentro: -24, posicoes: [-28, -20] }, // Muro Frente Esquerdo
-    { xCentro: 24, posicoes: [20, 28] },   // Muro Frente Direito
-  ];
-
-  configsSeteirasFrente.forEach((cfg) => {
-    const blocoMuro = new THREE.Mesh(new THREE.BoxGeometry(18, 12, 4.2), matPedra);
-    blocoMuro.position.set(cfg.xCentro, 12, 40);
-    blocoMuro.updateMatrix();
-    let csMuro = CSG.fromMesh(blocoMuro);
-
-    cfg.posicoes.forEach((posX) => {
-      const cutter = createSlitCutter(1.1, 3.2, 6.0);
-      const cutterMesh = CSG.toMesh(cutter, auxMat);
-      cutterMesh.position.set(posX, 11, 40);
-      cutterMesh.updateMatrix();
-      csMuro = csMuro.subtract(CSG.fromMesh(cutterMesh));
-    });
-
-    const meshMuroSeteira = CSG.toMesh(csMuro, auxMat, matPedra);
-    meshMuroSeteira.castShadow = true;
-    meshMuroSeteira.receiveShadow = true;
-    meshMuroSeteira.userData.collisionType = "none";
-    grupoCastelo.add(meshMuroSeteira);
-  });
-
-  // 2.2 Seteiras no Muro do Fundo (z = -40)
+  // 2.1 Seteiras no Muro do Fundo (z = -40)
   const blocoFundo = new THREE.Mesh(new THREE.BoxGeometry(40, 12, 4.2), matPedra);
   blocoFundo.position.set(0, 12, -40);
   blocoFundo.updateMatrix();

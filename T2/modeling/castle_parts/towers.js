@@ -69,7 +69,7 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
       stairX: 1.8,
       zStart: 2.8,
       zEnd: -2.8,
-      slitAngs: [-Math.PI / 2, -3 * Math.PI / 4, Math.PI],
+      slitAngs: [-Math.PI / 2, -3 * Math.PI / 4, Math.PI, 0, Math.PI / 2],
     },
     {
       x: 40,
@@ -78,7 +78,7 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
       stairX: -1.8,
       zStart: 2.8,
       zEnd: -2.8,
-      slitAngs: [-Math.PI / 2, -Math.PI / 4, 0],
+      slitAngs: [-Math.PI / 2, -Math.PI / 4, 0, Math.PI / 2, Math.PI],
     },
     {
       x: 40,
@@ -87,7 +87,7 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
       stairX: -1.8,
       zStart: -2.8,
       zEnd: 2.8,
-      slitAngs: [0, Math.PI / 4, Math.PI / 2],
+      slitAngs: [0, Math.PI / 4, Math.PI / 2, Math.PI, -Math.PI / 2],
     },
     {
       x: -40,
@@ -96,7 +96,7 @@ export function buildCornerTowers(grupoCastelo, matPedra) {
       stairX: 1.8,
       zStart: -2.8,
       zEnd: 2.8,
-      slitAngs: [Math.PI / 2, (3 * Math.PI) / 4, Math.PI],
+      slitAngs: [Math.PI / 2, (3 * Math.PI) / 4, Math.PI, -Math.PI / 2, 0],
     },
   ];
 
