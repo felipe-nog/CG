@@ -8,6 +8,7 @@ import {
 
 const TOTAL_KEYS = 4;
 const PICKUP_DISTANCE = 3.2;
+const PEDESTAL_DISTANCE = 4.5;
 const LIGHT_INTENSITY = 80;
 const LIGHT_DISTANCE = 20;
 const PARKED_Y = -50;
@@ -41,18 +42,25 @@ function createHud() {
 
   document.body.appendChild(hud);
 
-  const update = (count) => {
-    title.textContent = `Chaves coletadas: ${count}/${TOTAL_KEYS}`;
+  const update = (count, placedCount) => {
+    title.textContent = `Pedestais: ${placedCount}/${TOTAL_KEYS} · Carregadas: ${count}`;
     slots.forEach((slot, i) => {
-      const filled = i < count;
-      slot.style.background = filled ? "#ffc83d" : "transparent";
-      slot.style.boxShadow = filled
-        ? "0 0 10px 3px rgba(255, 170, 30, 0.9)"
-        : "none";
+      const isPlaced = i < placedCount;
+      const isCarried = i >= placedCount && i < placedCount + count;
+      slot.style.background = isPlaced
+        ? "#7dff83"
+        : isCarried
+          ? "#ffc83d"
+          : "transparent";
+      slot.style.boxShadow = isPlaced
+        ? "0 0 10px 3px rgba(70, 255, 100, 0.8)"
+        : isCarried
+          ? "0 0 10px 3px rgba(255, 170, 30, 0.9)"
+          : "none";
     });
   };
 
-  update(0);
+  update(0, 0);
   return update;
 }
 
@@ -60,7 +68,7 @@ function createHud() {
  * Chaves soltas pelos inimigos, coleta por proximidade, HUD e atalho 'K'
  * (dá todas as chaves; apertar de novo restaura as que o jogador tinha).
  */
-export function setupKeySystem(scene, camera) {
+export function setupKeySystem(scene, camera, portalPuzzle) {
   const drops = [];
 
   // Pool fixo de chaves + luzes (uma por chave). Criar/remover luzes ou
@@ -68,7 +76,7 @@ export function setupKeySystem(scene, camera) {
   // aqui tudo existe desde o início, "estacionado" abaixo do chão, e os shaders
   // são compilados já nos primeiros quadros.
   const keyMaterial = createKeyMaterial();
-  const pool = Array.from({ length: TOTAL_KEYS }, () => {
+  const createPool = (count) => Array.from({ length: count }, () => {
     const mesh = createKeyMesh(keyMaterial);
     mesh.frustumCulled = false;
     const light = new THREE.PointLight(KEY_COLOR, 0, LIGHT_DISTANCE, 2);
@@ -77,8 +85,22 @@ export function setupKeySystem(scene, camera) {
     park(slot);
     return slot;
   });
+  const pool = createPool(TOTAL_KEYS);
+  // Reserva esferas próprias para os pedestais, inclusive para o atalho K,
+  // que pode ser usado antes de coletar as chaves derrubadas pelos inimigos.
+  const pedestalPool = createPool(TOTAL_KEYS);
+  const placedKeys = [];
+  const pedestals = portalPuzzle?.pedestals ?? [];
+  const hatch = portalPuzzle?.hatch;
+  const hatchSurface = portalPuzzle?.hatchSurface;
+  const hatchRim = portalPuzzle?.rim;
+  let hatchOpening = false;
+  let hatchOpened = false;
+  const keyWorldPosition = new THREE.Vector3();
+  const pedestalWorldPosition = new THREE.Vector3();
 
   function park({ mesh, light }) {
+    scene.add(mesh);
     mesh.position.set(0, PARKED_Y, 0);
     light.position.copy(mesh.position);
     light.intensity = 0;
@@ -91,17 +113,19 @@ export function setupKeySystem(scene, camera) {
   let cheatCount = TOTAL_KEYS;
 
   const carried = () => (cheatActive ? cheatCount : collected);
-  renderHud(0);
+  const updateHud = () => renderHud(carried(), placedKeys.length);
+  updateHud();
 
   window.addEventListener("keydown", (event) => {
     if (event.repeat || event.key.toLowerCase() !== "k") return;
     cheatActive = !cheatActive;
-    cheatCount = TOTAL_KEYS;
-    renderHud(carried());
+    cheatCount = Math.max(0, TOTAL_KEYS - placedKeys.length);
+    updateHud();
   });
 
   function dropKey(position) {
     const slot = pool.pop();
+    if (!slot) return;
     const { mesh, light } = slot;
     mesh.position.copy(position);
     light.intensity = LIGHT_INTENSITY;
@@ -111,8 +135,38 @@ export function setupKeySystem(scene, camera) {
   }
 
   const cameraPosition = new THREE.Vector3();
+  let elapsed = 0;
+
+  function placeCarriedKey() {
+    if (carried() <= 0 || !pedestalPool.length) return;
+
+    for (let i = 0; i < pedestals.length; i++) {
+      const pedestal = pedestals[i];
+      if (pedestal.userData.hasKey) continue;
+      pedestal.getWorldPosition(pedestalWorldPosition);
+      if (pedestalWorldPosition.distanceTo(cameraPosition) > PEDESTAL_DISTANCE) continue;
+
+      if (!takeKey()) return;
+      const slot = pedestalPool.pop();
+      const { mesh, light } = slot;
+      pedestal.add(mesh);
+      mesh.position.set(0, 1.7, 0);
+      mesh.rotation.set(0, 0, 0);
+      mesh.visible = true;
+      mesh.getWorldPosition(keyWorldPosition);
+      light.position.copy(keyWorldPosition);
+      light.intensity = LIGHT_INTENSITY;
+      pedestal.userData.hasKey = true;
+      placedKeys.push({ slot, time: 0 });
+      updateHud();
+
+      if (placedKeys.length === TOTAL_KEYS && hatch) hatchOpening = true;
+      return;
+    }
+  }
 
   function update(delta) {
+    elapsed += delta;
     camera.getWorldPosition(cameraPosition);
 
     for (let i = drops.length - 1; i >= 0; i--) {
@@ -121,16 +175,31 @@ export function setupKeySystem(scene, camera) {
       drop.mesh.position.y = drop.baseY + Math.sin(drop.time * 2.5) * 0.15;
       drop.mesh.rotation.y += delta * 2;
       drop.light.position.copy(drop.mesh.position);
-      drop.mesh.material.emissiveIntensity =
-        KEY_EMISSIVE_INTENSITY + Math.sin(drop.time * 4) * 0.4;
-
       if (drop.mesh.position.distanceTo(cameraPosition) <= PICKUP_DISTANCE) {
         park(drop.slot);
         pool.push(drop.slot);
         drops.splice(i, 1);
-        collected = Math.min(collected + 1, TOTAL_KEYS);
-        renderHud(carried());
+        collected = Math.min(collected + 1, TOTAL_KEYS - placedKeys.length);
+        updateHud();
       }
+    }
+
+    placeCarriedKey();
+    keyMaterial.emissiveIntensity =
+      KEY_EMISSIVE_INTENSITY + Math.sin(elapsed * 4) * 0.4;
+    placedKeys.forEach(({ slot }, index) => {
+      slot.mesh.getWorldPosition(keyWorldPosition);
+      slot.light.position.copy(keyWorldPosition);
+      slot.light.intensity = LIGHT_INTENSITY * (0.9 + Math.sin(elapsed * 3 + index) * 0.1);
+    });
+
+    if (hatchOpening && hatch.rotation.x > -Math.PI / 2) {
+      hatch.rotation.x = Math.max(-Math.PI / 2, hatch.rotation.x - delta * 1.4);
+    }
+    if (hatchOpening && !hatchOpened && hatch.rotation.x <= -Math.PI / 2) {
+      if (hatchSurface) hatchSurface.userData.collisionType = "none";
+      if (hatchRim) hatchRim.userData.collisionType = "none";
+      hatchOpened = true;
     }
   }
 
@@ -138,9 +207,16 @@ export function setupKeySystem(scene, camera) {
     if (carried() <= 0) return false;
     if (cheatActive) cheatCount -= 1;
     else collected -= 1;
-    renderHud(carried());
+    updateHud();
     return true;
   }
 
-  return { dropKey, update, takeKey, carried };
+  return {
+    dropKey,
+    update,
+    takeKey,
+    carried,
+    placedCount: () => placedKeys.length,
+    isHatchOpen: () => hatchOpened,
+  };
 }

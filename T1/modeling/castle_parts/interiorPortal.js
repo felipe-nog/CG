@@ -17,23 +17,27 @@ export function buildInteriorPortal(grupoCastelo, materials) {
   aro.userData.collisionType = "walkable";
   grupoPortal.add(aro);
 
+  const conjuntoEscotilha = new THREE.Group();
+  conjuntoEscotilha.position.set(centro.x, 0.12, centro.z - 3.68);
+
   const escotilha = new THREE.Mesh(
     new THREE.CylinderGeometry(3.68, 3.68, 0.18, 48),
     matTelhado,
   );
-  escotilha.position.set(centro.x, 0.12, centro.z);
+  escotilha.position.z = 3.68;
   escotilha.userData.collisionType = "walkable";
-  grupoPortal.add(escotilha);
+  conjuntoEscotilha.add(escotilha);
 
   // Frisos radiais discretos dividem visualmente a tampa em placas.
   const friso = new THREE.BoxGeometry(0.08, 0.025, 7.1);
   for (const angulo of [0, Math.PI / 2]) {
     const placa = new THREE.Mesh(friso, matPedra);
-    placa.position.set(centro.x, 0.222, centro.z);
+    placa.position.set(0, 0.102, 3.68);
     placa.rotation.y = angulo;
-    placa.userData.collisionType = "walkable";
-    grupoPortal.add(placa);
+    placa.userData.collisionType = "none";
+    conjuntoEscotilha.add(placa);
   }
+  grupoPortal.add(conjuntoEscotilha);
 
   // Quatro pedestais igualmente espaçados em volta da escotilha.
   const posicoes = [
@@ -43,9 +47,11 @@ export function buildInteriorPortal(grupoCastelo, materials) {
     [0, 8],
   ];
 
+  const pedestais = [];
   for (const [x, z] of posicoes) {
     const pedestal = new THREE.Group();
     pedestal.position.set(centro.x + x, 0.1, centro.z + z);
+    pedestal.userData.hasKey = false;
 
     const base = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.28, 2.4), matPedra);
     base.position.y = 0.14;
@@ -64,8 +70,15 @@ export function buildInteriorPortal(grupoCastelo, materials) {
     pedestal.add(apoio);
 
     grupoPortal.add(pedestal);
+    pedestais.push(pedestal);
   }
 
   grupoCastelo.add(grupoPortal);
+  grupoPortal.userData.puzzle = {
+    hatch: conjuntoEscotilha,
+    hatchSurface: escotilha,
+    rim: aro,
+    pedestals: pedestais,
+  };
   return grupoPortal;
 }

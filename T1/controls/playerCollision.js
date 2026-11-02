@@ -11,7 +11,7 @@ export const maxFallSpeed = 35.0;
 
 // Contexto de Colisão do Frame
 export function createCollisionContext(collisionObjects = []) {
-  const { colliders, walkableBounds, roofBounds, stairBounds, ramps } =
+  const { colliders, walkableBounds, walkableSurfaces, roofBounds, stairBounds, ramps } =
     collectCollisionData(collisionObjects);
 
   const playerBounds = new THREE.Box3();
@@ -47,14 +47,19 @@ export function createCollisionContext(collisionObjects = []) {
 
     if (floor > -Infinity) return floor;
 
-    walkableBounds.forEach((bounds) => {
+    walkableSurfaces.forEach(({ bounds, holes }) => {
       const inside =
         position.x >= bounds.min.x - playerRadius &&
         position.x <= bounds.max.x + playerRadius &&
         position.z >= bounds.min.z - playerRadius &&
         position.z <= bounds.max.z + playerRadius;
+      const insideHole = holes.some((hole) =>
+        Math.abs(position.x - hole.center.x) < hole.halfWidth &&
+        Math.abs(position.z - hole.center.z) < hole.halfDepth
+      );
       if (
         inside &&
+        !insideHole &&
         bounds.max.y <= feet + maxStepHeight &&
         bounds.max.y > floor
       ) {
@@ -66,13 +71,17 @@ export function createCollisionContext(collisionObjects = []) {
 
   const floorCrossedDuringFall = (position, previousFeet, nextFeet) => {
     let landingFloor = -Infinity;
-    walkableBounds.forEach((bounds) => {
+    walkableSurfaces.forEach(({ bounds, holes }) => {
       const inside = position.x >= bounds.min.x - playerRadius &&
         position.x <= bounds.max.x + playerRadius &&
         position.z >= bounds.min.z - playerRadius &&
         position.z <= bounds.max.z + playerRadius;
+      const insideHole = holes.some((hole) =>
+        Math.abs(position.x - hole.center.x) < hole.halfWidth &&
+        Math.abs(position.z - hole.center.z) < hole.halfDepth
+      );
       const crossed = bounds.max.y <= previousFeet && bounds.max.y >= nextFeet;
-      if (inside && crossed && bounds.max.y > landingFloor) {
+      if (inside && !insideHole && crossed && bounds.max.y > landingFloor) {
         landingFloor = bounds.max.y;
       }
     });

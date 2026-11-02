@@ -39,7 +39,8 @@ export function buildCastle(scene) {
   buildInternalBuilding(grupoCastelo, 15, -15, materials, -1);
 
   // Escotilha e pedestais do puzzle do interior
-  buildInteriorPortal(grupoCastelo, materials);
+  const portalInterior = buildInteriorPortal(grupoCastelo, materials);
+  grupoCastelo.userData.portalInterior = portalInterior.userData.puzzle;
 
   // Escadas do muro
   buildWallStairs(grupoCastelo, materials.matPedra);
