@@ -8,10 +8,6 @@ import { buildCornerTowers } from "./castle_parts/towers.js";
 import { buildGuardTowers } from "./castle_parts/guardTowers.js";
 import { buildInternalBuilding } from "./castle_parts/buildings.js";
 import { buildWallStairs } from "./castle_parts/stairs.js";
-import { buildInteriorPortal } from "./castle_parts/interiorPortal.js";
-import { buildWallWalkways } from "./castle_parts/wallWalkways.js";
-import { buildExternalAccess } from "./castle_parts/externalAccess.js";
-import { buildCSGElements } from "./castle_parts/csgElements.js";
 
 export { updateDoors } from "./castle_parts/doors.js";
 
@@ -25,11 +21,11 @@ export function buildCastle(scene) {
   // Modelagem do terreno e dos muros
   buildTerrain(grupoCastelo, materials);
   buildWalls(grupoCastelo, materials);
-
+  
   // Modelagem do portão e da porta
   buildGate(grupoCastelo, materials);
   buildGatehouse(grupoCastelo, materials.matPedra);
-
+  
   // Modelagem das torres
   buildCornerTowers(grupoCastelo, materials.matPedra);
   buildGuardTowers(grupoCastelo, materials.matPedra);
@@ -38,21 +34,8 @@ export function buildCastle(scene) {
   buildInternalBuilding(grupoCastelo, -15, 0, materials, 1);
   buildInternalBuilding(grupoCastelo, 15, -15, materials, -1);
 
-  // Escotilha e pedestais do puzzle do interior
-  const portalInterior = buildInteriorPortal(grupoCastelo, materials);
-  grupoCastelo.userData.portalInterior = portalInterior.userData.puzzle;
-
   // Escadas do muro
   buildWallStairs(grupoCastelo, materials.matPedra);
-
-  // Passarelas elevadas conectando todos os muros
-  buildWallWalkways(grupoCastelo, materials.matPedra);
-
-  // Elementos arquitetônicos com CSG (Pórtico do portão, Seteiras e Acesso às torres)
-  buildCSGElements(grupoCastelo, materials);
-
-  // Acesso externo sobre a água (camadas de areia e verde, pontes e mirante)
-  buildExternalAccess(grupoCastelo, materials);
 
   return grupoCastelo;
 }
